@@ -1,0 +1,11 @@
+---
+#Download a postgresql copy from a custom URL (Could be a http, an ftp whatever.)
+
+
+# ==> Copy installer files
+- name: Copy installer files
+  copy: src={{ postgresql_packages_dir }}/{{ item }} dest='{{ postgresql_download_path }}/{{ item }}'
+  with_items: '{{ postgresql_packages }}'
+
+
+

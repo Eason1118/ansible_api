@@ -1,0 +1,24 @@
+---
+# prepare operating system to the installation
+- name: create weblogic group
+  group:
+    name: "{{ oracle_weblogic_group }}"
+    state: present
+
+- name: create weblogic user
+  user:
+    name: "{{ oracle_weblogic_user }}"
+    group: "{{ oracle_weblogic_group }}"
+    createhome: yes
+    home: "{{ oracle_weblogic_user_home }}"
+    state: present
+
+- name: prepare oracle inventory parameters
+  template:
+    src: ora_inst.loc.j2
+    dest: "/etc/oraInst.loc"
+
+- name: upload weblogic jar file to target machine
+  copy:
+    src: "{{ weblogic_jar_dir }}/{{ weblogic_jar_name }}"
+    dest: "{{ oracle_weblogic_jar }}"

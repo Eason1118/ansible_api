@@ -1,0 +1,4 @@
+---
+# SHA256 sum for the Tomcat redistributable package
+tomcat_redis_checksum: "0a5db37147b4874e378417628514662d16f23f1f79659297b3526ba57e7facd0"
+tomcat_web_xml_schema_version: 3.1

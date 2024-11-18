@@ -1,0 +1,63 @@
+---
+
+  - name: copy sqlserver software to remote host
+    win_copy: src={{ sqlserver_packages_dir }}/{{ sqlserver_name }}  dest=C:\\Users\\Administrator\\Desktop\\
+
+  - name: copy bat software to remote host
+    win_copy: src={{ sqlserver_packages_dir }}/{{ sqlserver_bat }}  dest=C:\\Users\\Administrator\\Desktop\\
+
+  - name: copy ini software to remote host
+    win_copy: src={{ sqlserver_packages_dir }}/{{ sqlserver_ini }}   dest=C:\\
+
+  - name: Unzip sqlserver bz2 (BZip) file
+    win_unzip:
+      src: C:\\Users\\Administrator\\Desktop\\{{ sqlserver_name }}
+      dest: C:\\Users\\Administrator\\Desktop
+
+  - name: Create directory structure
+    win_file:
+      path: C:\Program Files (x86)\Microsoft SQL Server\DReplayClient\ResultDir
+      state: directory
+
+  - name: Create directory structure
+    win_file:
+      path: C:\Program Files (x86)\Microsoft SQL Server\DReplayClient\WorkingDir
+      state: directory
+
+  - name: create a task to install sqlserver
+    win_command: schtasks /create /tn TaskName_{{ sqlserver_task_name }} /f /tr C:\Users\Administrator\Desktop\{{ sqlserver_bat }} /sc once /st 12:00 /ET 14:00  /SD 2006/06/20
+
+
+  - name: run install sqlserver
+    win_command: schtasks /run /tn TaskName_{{ sqlserver_task_name }}
+
+  - name: wait 1200 seconds
+    win_wait_for:
+      delay: 1200
+
+  - name: Judging the existence of sql
+    win_reg_stat:
+      path: HKLM:\SOFTWARE\Microsoft\Windows\CurrentVersion\Uninstall\Microsoft SQL Server SQL2017
+    register: sql_existence
+
+  - name: cmd schtasks delete Task
+    win_command: schtasks /delete /TN TaskName_{{ sqlserver_task_name }} /F
+
+  - debug: msg="{{sql_existence.exists}}"
+
+#  - name: create a task to install sqlserver
+#    win_scheduled_task:
+#      name: TaskName_{{ sqlserver_task_name }}
+#      description: open command prompt_install
+#      actions:
+#      - path: cmd.exe
+#        arguments: /c C:\Users\Administrator\Desktop\{{ sqlserver_bat }}
+##      working_directory: C:\Users\Administrator\Desktop\sqlserver.bat
+##      - path: cmd.exe
+##        arguments: /c whoami
+#      triggers:
+#      - type: registration
+##        start_boundary: '2019-01-17T13:41:10'
+#      username: Administrator
+#      state: present
+#      enabled: yes

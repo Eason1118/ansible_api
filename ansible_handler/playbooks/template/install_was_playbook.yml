@@ -1,0 +1,34 @@
+---
+
+- name: prepare installation
+  hosts: {{ ip_list }}
+  vars:
+    yum_baseurl: "{{ bocloud_ansible.packages_yum_baseurl }}"
+    backup_repo: True
+    restory_repo: False
+  roles:
+    - role: bocloud_common
+
+- name: Install WebSphere Application Server - Network Deployment
+  hosts: {{ ip_list }}
+  vars:
+    was_packages: {{ bocloud_ansible.packages_path }}/ibm
+    {%- if args.software_config is defined %}
+    {%- for key, value in args.software_config.items() %}
+    {{ key }}: {{ value }}
+    {%- endfor %}
+    {%- endif %}
+  roles:
+    - ansible-ibm-websphere/roles/installation-manager-install
+    - ansible-ibm-websphere/roles/was-nd-install
+    - ansible-ibm-websphere/roles/was-nd-fix-install
+    - ansible-ibm-websphere/roles/was-java-install
+
+- name: restory original environment
+  hosts: {{ ip_list }}
+  vars:
+    backup_repo: False
+    restory_repo: True
+    configure_bocloud_repo: False
+  roles:
+    - role: bocloud_common

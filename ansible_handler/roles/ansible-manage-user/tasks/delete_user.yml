@@ -1,0 +1,15 @@
+---
+
+- name: delete linux user
+  user:
+    name: "{{ item }}"
+    state: absent
+    remove: yes
+    force: "{% if user_info.force is defined %}{{ user_info.force }}{% else %}no{% endif %}"
+  with_items: "{{ user_info.name }}"
+  register: user_state
+
+- debug:
+    msg: "用户不存在！"
+  failed_when: not user_state.changed
+  when: not user_state.changed

@@ -1,0 +1,23 @@
+---
+
+- hosts: {{ ip_list }}
+
+  vars:
+    oracle_weblogic_version: {{ args.version.split('-')[0] }}
+    oracle_weblogic_release: {{ args.version.split('-')[1] }}
+    oracle_weblogic_quick_installation: no
+    {%- if args.version.split('-')[0] == '11g' %}
+    weblogic_jar_name: wls1036_generic.jar
+    {%- else %}
+    weblogic_jar_name: fmw_{{ args.version.split('-')[1] }}_wls{% if oracle_weblogic_quick_installation %}_quick{% endif %}.jar
+    {%- endif %}
+    weblogic_jar_dir: {{ bocloud_ansible.packages_path }}/weblogic
+    {%- if args.install_config is defined %}
+    {%- for key, value in args.install_config.items() %}
+    {{ key }}: {{ value }}
+    {%- endfor %}
+    {%- endif %}
+
+  roles:
+    - role: ansible-role-oracle-weblogic
+

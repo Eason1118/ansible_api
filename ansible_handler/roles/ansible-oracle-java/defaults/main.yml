@@ -1,0 +1,24 @@
+---
+
+#
+# variables needed to be defined in user's playbook
+#
+
+
+
+#
+# user-configurable defaults
+#
+
+java_version: 8
+java_subversion: 112
+
+java_download_path: /tmp
+java_download_from_oracle: true
+java_remove_download: true
+java_install_jce: false
+
+java_set_javahome: false
+
+# java is depended by other software. It will be installed if it missed.
+java_depended: false

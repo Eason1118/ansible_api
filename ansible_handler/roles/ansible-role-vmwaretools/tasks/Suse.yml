@@ -1,0 +1,54 @@
+---
+# tasks file for vmwaretools/Suse
+
+- name: Remove the open-vm-tools if they are installed not to block vmware-tools installation
+  zypper:
+    name: open-vm-tools
+    state: absent
+  when: ansible_distribution_major_version|int == 11
+
+- name: Check vmware-tools directory exists
+  local_action: stat path={{ packages_dir }}/vmwaretools/suse{{ ansible_distribution_major_version }}/{{ ansible_architecture }}
+  register: result
+  failed_when: not result.stat.exists
+
+- name: Download vmware-tools file for x86_64/amd64 to /tmp
+  copy:
+    src: "{{ item }}"
+    dest: /tmp/
+    force: yes
+  with_fileglob:
+    - "{{ packages_dir }}/vmwaretools/suse{{ ansible_distribution_major_version }}/{{ ansible_architecture }}/*.rpm"
+
+# vmware-tools-esx for suse 11
+# open-vm-tools for suse 12 
+- name: Install vmware-tools
+  raw: cd /tmp/ ; zypper --no-gpg-checks install -y *.rpm
+  register: command_result
+  failed_when: command_result.rc !=0 and not "'Nothing to do' in command_result.stdout"
+
+#- name: Install vmware-tools during boot for SUSE11
+#  zypper:
+#    name: vmware-tools-esx
+#    disable_gpg_check: yes
+#  when: ansible_distribution_major_version|int == 11
+#
+#- name: Installing Open VMware Tools (open-vm-tools) for SLES12 and higher or OpenSuse
+#  zypper:
+#    name: open-vm-tools
+#  when: ansible_distribution_major_version|int != 11
+
+# vmtoolsd needs to be started on VMware enabled VM, otherwise it will fail to start which breaks idempotency tests
+- name: Start vmtoolsd and enable vmtoolsd to start during boot for SUSE12 and higher or OpenSuse
+  service:
+    name: vmtoolsd
+    state: started
+    enabled: yes
+  when: ansible_distribution_major_version|int != 11
+
+- name: Start and enable vmware-tools-services during boot for SUSE11
+  service:
+    name: vmware-tools-services
+    state: restarted
+    enabled: yes
+  when: ansible_distribution_major_version|int == 11

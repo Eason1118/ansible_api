@@ -1,0 +1,25 @@
+---
+#
+- name: create installation directories
+  become: yes
+  become_user: "{{ oracle_weblogic_user }}"
+  file:
+    path: "{{ item }}"
+    state: directory
+  with_items:
+    - "{{ oracle_weblogic_oracle_home }}"
+    - "{{ oracle_weblogic_inventory_directory }}"
+
+- name: generate response file
+  become: yes
+  become_user: "{{ oracle_weblogic_user }}"
+  template:
+    src: install-wls-11g.xml.j2
+    dest: "{{ oracle_weblogic_response_file }}"
+
+- name: install weblogic
+  become: yes
+  become_user: "{{ oracle_weblogic_user }}"
+  shell: "java -jar {{ oracle_weblogic_jar }} -mode=silent -silent_xml={{ oracle_weblogic_response_file }} >> /tmp/weblogic-installation.log"
+  args:
+    creates: "{{ oracle_weblogic_oracle_home }}/oraInst.loc"

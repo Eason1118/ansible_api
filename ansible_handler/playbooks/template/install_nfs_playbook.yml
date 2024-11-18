@@ -1,0 +1,38 @@
+---
+
+- name: prepare installation
+  hosts: {{ ip_list }}
+  vars:
+    yum_baseurl: "{{ bocloud_ansible.packages_yum_baseurl }}"
+    backup_repo: True
+    restory_repo: False
+  roles:
+    - role: bocloud_common
+
+{%- if args.nfs_server is defined %}
+- name: install NFS server
+  hosts: nfs_server
+  vars:
+    nfs_server: true
+    nfs_exports: {{ args.nfs_server.nfs_exports }}
+  roles:
+    - role: ansible-role-nfs
+{%- endif %}
+
+{%- if args.nfs_client is defined and  args.nfs_client %}
+- name: install NFS client
+  hosts: nfs_client
+  vars:
+    nfs_server: false
+  roles:
+    - role: ansible-role-nfs
+{%- endif %}
+
+- name: restory original environment
+  hosts: {{ ip_list }}
+  vars:
+    backup_repo: False
+    restory_repo: True
+    configure_bocloud_repo: False
+  roles:
+    - role: bocloud_common

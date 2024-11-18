@@ -1,0 +1,48 @@
+---
+
+- hosts: {{ ip_list }}
+  gather_facts: false
+  vars:
+    copy_dest: {{ args.dest }}
+    copy_src: {{ args.src | default("") }}
+  tasks:
+    - name: "Get dest {{ '{{ copy_dest | dirname }}' }} stat."
+      stat:
+        path: {{ '"{{ copy_dest | dirname }}"' }}
+      register: stat
+
+#    - name: "Create dest {{ '{{ copy_dest | dirname }}' }} directory is not exists."
+#      file:
+#        path: {{ '"{{ copy_dest | dirname }}"' }}
+#        state: directory
+#      when: not stat.stat.exists
+    - name: check dirname
+      shell: ls {{ args.dest }}
+
+    {% if args.decompress is defined and args.decompress %}
+    - name: extract sources to dest
+      unarchive:
+        src: "{{ bocloud_worker.nfs_path }}/{{ '{{ item }}"' }}
+        dest: {{ args.dest }}
+      with_items:
+        {%- for src in args.src.split(',') %}
+        - {{ src }}
+        {%- endfor %}
+    {%- else %}
+    - name: Copy files {{ args.src }} to {{ args.dest }}
+      copy:
+        dest: {{ args.dest }}
+        {%- if args.content is defined %}
+        content: "{{ args.content }}"
+        {%- endif %}
+        {%- if args.force is defined %}
+        force: {{ args.force }}
+        {%- endif %}
+      {%- if args.src is defined %}
+        src: "{{ bocloud_worker.nfs_path }}/{{ '{{ item }}"' }}
+      with_items:
+        {%- for src in args.src.split(',') %}
+        - {{ src }}
+        {%- endfor %}
+      {%- endif %}
+    {%- endif %}

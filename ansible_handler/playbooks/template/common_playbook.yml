@@ -1,0 +1,12 @@
+---
+
+- hosts: {{ ip_list }}
+  gather_facts: false
+  tasks:
+    {%- if args is defined %}
+    {%- for module, values in args.items(): %}
+    - name: operate module {{ module }}, args is {{ values }}
+      {{ module }}: {{ values }}
+    {%- endfor %}
+    {%- endif %}
+      register: bocloud_worker_msg

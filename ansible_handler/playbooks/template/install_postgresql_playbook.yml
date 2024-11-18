@@ -1,0 +1,42 @@
+---
+
+- name: prepare installation
+  hosts: {{ ip_list }}
+  vars:
+    yum_baseurl: "{{ bocloud_ansible.packages_yum_baseurl }}"
+    backup_repo: True
+    restory_repo: False
+  roles:
+    - role: bocloud_common
+
+- hosts: {{ ip_list }}
+  vars:
+    postgresql_full_version: {{ args.version.split('v')[1].split('_')[0]}}
+    postgresql_version_date: {{ args.version.split('_')[1]}}
+    postgresql_version: {{ args.version.split('v')[1].split('.')[0] }}
+    {%- if args.install_config is defined %}
+    {%- for key, value in args.install_config.items() %}
+    {{ key }}: {{ value }}
+    {%- endfor %}
+    {%- endif %}
+    {%- if args.software_config is defined %}
+    {%- for key, value in args.software_config.items() %}
+    {{ key }}: {{ value }}
+    {%- endfor %}
+    {%- endif %}
+    postgresql_lib_packages:
+      - libicu
+    postgresql_data_dir: "/var/lib/pgsql/{{ args.version.split('v')[1].split('.')[0] }}/data"
+    postgresql_download_path: "/tmp"
+    postgresql_bin_path: "/usr/pgsql-{{args.version.split('v')[1].split('.')[0]}}/bin"
+    
+    postgresql_config_path: "/var/lib/pgsql/{{ args.version.split('v')[1].split('.')[0] }}/data"
+    postgresql_daemon: postgresql-{{ args.version.split('v')[1].split('.')[0] }}
+    postgresql_packages_dir: "{{ bocloud_ansible.packages_path }}/postgresql"
+    postgresql_packages:
+      - postgresql{{args.version.split('v')[1].split('.')[0]}}-libs-{{args.version.split('v')[1].split('_')[0]}}-devel_{{ args.version.split('_')[1]}}_1PGDG.rhel7.x86_64.rpm
+      - postgresql{{args.version.split('v')[1].split('.')[0]}}-{{args.version.split('v')[1].split('_')[0]}}-devel_{{ args.version.split('_')[1]}}_1PGDG.rhel7.x86_64.rpm
+      - postgresql{{args.version.split('v')[1].split('.')[0]}}-server-{{args.version.split('v')[1].split('_')[0]}}-devel_{{ args.version.split('_')[1]}}_1PGDG.rhel7.x86_64.rpm
+      - postgresql{{args.version.split('v')[1].split('.')[0]}}-contrib-{{args.version.split('v')[1].split('_')[0]}}-devel_{{ args.version.split('_')[1]}}_1PGDG.rhel7.x86_64.rpm
+  roles:
+    - role: ansible-role-postgresql

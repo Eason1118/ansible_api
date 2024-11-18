@@ -1,0 +1,74 @@
+---
+# This is the most rich example, with all posible customizations
+  - hosts: all
+    gather_facts: True
+    pre_tasks:
+      # This is required to test on RedHat (No license on vagrant, so no packages available)
+      - name: Installing OL Public repository
+        get_url: 
+          url: "{{yum_repo}}"
+          dest: /etc/yum.repos.d/public-yum-release.repo
+        tags: download
+
+      - name: Create DB2 Directory
+        file:
+          path: /db2
+          state: directory
+          mode: 0755
+
+    roles:
+      - db2
+    vars:
+       # Define the db2_binary and setup the URL to download.
+       # Variable location define where should put db2 on ansible machine
+       # Variable dest define where should decompress DB2 on remote host
+      db2_binary:
+        url: "ftp://transfer.lb2.com.br/downloads/connections/DB2_Svr_10.5.0.3_Linux_x86-64.tar.gz"
+        location: "/vagrant/db2_10503.tar.gz"
+        dest: "/tmp"
+
+      databases:
+        - name: jts
+          instance: db2inst1
+          codeset: "UTF-8"
+          territory: "en"
+          pagesize: "16384"
+        - name: ccm
+          instance: db2inst2
+          codeset: "UTF-8"
+          territory: "en"
+          pagesize: "16384"
+
+      db2_instances:
+        - instance: "DB2INST"
+          name: "db2inst1"
+          group_name: "db2iadm1"
+          fenced_username: "db2fenc1"
+          fenced_group_name: "db2fadm1"
+          home_directory: "/db2/db2inst1"
+          fenced_home_directory: "/db2/db2fenc1"
+          uid: 999
+          gid: 987
+          fenced_uid: 888
+          fenced_gid: 876
+          dbm_params:
+            intra_parallel: "YES"
+            numdb: "15"
+
+        - instance: "DB2INST2"
+          name: "db2inst2"
+          group_name: "db2iadm2"
+          fenced_username: "db2fenc2"
+          fenced_group_name: "db2fadm2"
+          home_directory: "/db2/db2inst2"
+          fenced_home_directory: "/db2/db2fenc2"
+          uid: 900
+          gid: 901
+          fenced_uid: 800
+          fenced_gid: 801
+          options:
+            autostart: "YES"
+            start_during_install: "YES"
+          dbm_params:
+            intra_parallel: "NO"
+            numdb: "25"

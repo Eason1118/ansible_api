@@ -1,0 +1,55 @@
+---
+
+- include: add_user.yml
+  when:
+    - ansible_os_family != "Windows"
+    - operate_type == "add"
+    - user_info is defined
+
+- include: add_user_win.yml
+  when:
+    - ansible_os_family == "Windows"
+    - operate_type == "add"
+    - user_info is defined
+
+- include: delete_user.yml
+  when:
+    - ansible_os_family != "Windows"
+    - operate_type == "delete"
+    - user_info is defined
+
+- include: delete_user_win.yml
+  when:
+    - ansible_os_family == "Windows"
+    - operate_type == "delete"
+    - user_info is defined
+
+- include: modify_user.yml
+  when:
+    - ansible_os_family != "Windows"
+    - operate_type == "modify"
+    - user_info is defined
+
+- include: modify_user_win.yml
+  when:
+    - ansible_os_family == "Windows"
+    - operate_type == "modify"
+    - user_info is defined
+
+- include: setting_sudo.yml
+  when:
+    - ansible_os_family != "Windows"
+    - operate_type == "add" or operate_type == "modify"
+    - sudoer_info is defined
+
+- include: remove_sudo.yml
+  when:
+    - ansible_os_family != "Windows"
+    - operate_type == "delete"
+    - sudoer_info is defined
+
+- include: sudo_viewer.yml
+  when:
+    - ansible_os_family != "Windows"
+    - operate_type == "view"
+    - sudoer_info is defined

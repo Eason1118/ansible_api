@@ -1,0 +1,80 @@
+---
+
+#  - name: Judging the existence of Java
+#    win_reg_stat:
+#      path: HKLM:\SOFTWARE\JavaSoft\Java Development Kit
+#    register: java_existence
+
+#  - name: copy jdk software to remote host
+#    win_copy: src={{ java_packages_dir }}/{{ java_packages_name }}  dest=C:\\Users\\Administrator\\Desktop\\
+# jdk-7u2-windows-x64.exe  jdk1.8.0_191
+#  - name: install java
+#    win_package:
+#      path: C:\\Users\\Administrator\\Desktop\\{{ java_packages_name }}
+#      product_id: 8u191
+#      arguments:
+#        - /s
+#        - /quiet
+#      state: present
+#    when: java_existence.exists == False
+
+#  - name: Add JAVA_HOME Env
+#    win_path:
+#      name: JAVA_HOME
+#      elements: C:\Program Files\Java\jdk1.{{ java_major_version }}.0_{{ java_minor_version }}
+#      scope: machine
+#      state: present
+#    when: java_existence.exists == False
+
+#  - name: Add JAVA_BIN Env
+#    win_path:
+#      name: PATH
+#      elements: C:\Program Files\Java\jdk1.{{ java_major_version }}.0_{{ java_minor_version }}\bin
+#      scope: machine
+#      state: present
+#    when: java_existence.exists == False
+
+#  - name: Reboot Windows Server
+#    win_reboot:
+#      msg: "Restart the server 3 seconds later"
+#      post_reboot_delay: 3
+#      test_command: whoami
+#    when: java_existence.exists == False
+
+
+
+  - name: copy tomcat software to remote host
+    win_copy: src={{ tomcat_packages_dir }}/{{ tomcat_packages_name }} dest=C:\\Users\\Administrator\\Desktop\\
+
+  - name: Unzip a bz2 (BZip) file
+    win_unzip:
+      src: C:\\Users\\Administrator\\Desktop\\{{ tomcat_packages_name }}
+      dest: C:\\Program Files
+
+  - name: Add tomcat Env
+    win_path:
+      name: CATALINA_HOME
+#      elements: C:\Program Files\{{ tomcat_major_version }}
+      elements: C:\Program Files\{{ tomcat_packages_name.split('-w')[0] }}
+      scope: machine
+      state: present
+
+  - name: Add TOMCAT_BIN Env
+    win_path:
+      name: PATH
+#      elements: C:\Program Files\{{ tomcat_major_version }}\bin
+      elements: C:\Program Files\{{ tomcat_packages_name.split('-w')[0] }}\bin
+      scope: machine
+      state: present
+
+  - name: command tomcat
+#    win_command: startup.bat C:\Program Files\{{ tomcat_major_version }}\bin
+    win_command: startup.bat C:\Program Files\{{ tomcat_packages_name.split('-w')[0] }}\bin
+    async: 5
+    poll: 0
+
+#  - name: command tomcat
+#    win_command: C:\Program Files\apache-tomcat-9.0.14\bin\startup.bat
+
+
+

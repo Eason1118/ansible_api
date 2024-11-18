@@ -1,0 +1,102 @@
+---
+- name: Mkdir /etc/yum.repos.d/bak
+  file:
+    dest: /etc/yum.repos.d/bak
+    mode: 0777
+    owner: root
+    group: root
+    state: directory
+
+- name: Backup old repo
+  shell: mv /etc/yum.repos.d/*.repo /etc/yum.repos.d/bak
+  ignore_errors: yes
+
+- name: Add cmp yum repository
+  yum_repository:
+    name: cmp
+    description: CMP YUM REPO
+    baseurl: '{{ packages_yum_baseurl|replace("base_url", "yum") }}'
+    gpgcheck: 0
+
+- name: Clean all yum
+  raw: "yum clean all"
+
+- name: Install dependencies for prometheus-openstack-exporter
+  yum:
+    name:
+      - gcc
+      - python2-pip
+      - python-devel
+      - libffi-devel
+      - liberasurecode
+      - liberasurecode-devel
+    state: present
+    enablerepo: cmp
+
+- name: Create prometheus-openstack-exporter releated dir
+  file:
+    state: directory
+    path: "{{ item }}"
+    mode: 0755
+  with_items:
+    - /var/cache/prometheus-openstack-exporter/
+    - /etc/prometheus-openstack-exporter/
+
+- name: Unarchive prometheus-openstack-exporter
+  unarchive:
+    src: "{{ packages_path }}/prometheus_openstack_exporter/prometheus_openstack_exporter.tar.gz"
+    dest: "/tmp"
+    force: yes
+
+- name: Install prometheus-openstack-exporter
+  raw: cd /tmp/prometheus_openstack_exporter/ && pip install pbr-5.1.3-py2.py3-none-any.whl && pip install *
+
+- name: Upload admin.novarc
+  template:
+    src: templates/admin.novarc
+    dest: /etc/prometheus-openstack-exporter/admin.novarc
+    mode: 0644
+    force: yes
+
+- name: Upload prometheus-openstack-exporter.yaml file
+  template:
+    src: templates/prometheus-openstack-exporter.yaml
+    dest: /etc/prometheus-openstack-exporter/prometheus-openstack-exporter.yaml
+    mode: 0644
+    force: yes
+
+- name: Upload prometheus-openstack-exporter default file
+  template:
+    src: templates/prometheus-openstack-exporter
+    dest: /etc/default/prometheus-openstack-exporter
+    mode: 0644
+    force: yes
+
+- name: Upload prometheus-openstack-exporter service file
+  copy:
+    src: files/prometheus-openstack-exporter.service
+    dest: /etc/systemd/system/prometheus-openstack-exporter.service
+    mode: 0644
+    force: yes
+
+- name: Reload systemd
+  raw: systemctl daemon-reload
+
+- name: Restart prometheus-openstack-exporter
+  service:
+    name: prometheus-openstack-exporter
+    state: restarted
+    enabled: yes
+
+- name: Restore yum configure
+  raw: mv /etc/yum.repos.d/bak/*.repo /etc/yum.repos.d/; rm -rf /etc/yum.repos.d/bak/ /etc/yum.repos.d/cmp.repo
+  ignore_errors: yes
+
+- name: Clean all yum
+  raw: "yum clean all"
+  ignore_errors: yes
+
+- name:  Assert prometheus-openstack-exporter running
+  shell: service prometheus-openstack-exporter status warn=false
+  register: result
+  failed_when: result.rc != 0 and ("unrecognized service" not in result.stderr)

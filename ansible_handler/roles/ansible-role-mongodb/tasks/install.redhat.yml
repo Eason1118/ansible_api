@@ -1,0 +1,56 @@
+---
+
+- name: Establish some role-related facts
+  set_fact:
+    mongodb_major_version: "{{ mongodb_version[0:3] }}"
+
+#- name: Install EPEL release repository
+#  package:
+#    name: epel-release
+#    state: present
+#
+#- name: Add YUM repository
+#  template:
+#    src: mongodb.repo.j2
+#    dest: /etc/yum.repos.d/mongodb.repo
+#    mode: 0644
+#  with_items: "{{ mongodb_version[0:3] }}"
+#  when: mongodb_package == 'mongodb-org'
+
+- name: add mongodb yum repository
+  yum_repository:
+    name: mongodb-org
+    description: mongodb-org repository
+    baseurl: "{{ yum_baseurl }}/mongodb/{{ ansible_distribution_major_version }}/{{ mongodb_version }}"
+    gpgcheck: False
+
+- name: Install MongoDB package
+  yum:
+    name: "{{ item }}"
+    state: present
+  with_items:
+    - "{{ mongodb_package }}"
+    - numactl
+    - libselinux-python
+
+- name: Install PyMongo package
+  yum:
+    name: python-pymongo
+    state: latest
+  when: not mongodb_pymongo_from_pip
+
+- name: Install PIP
+  yum:
+    name: "{{ item }}"
+  with_items:
+    - python-devel
+    - python-pip
+  when: mongodb_pymongo_from_pip
+
+- name: Install PyMongo from PIP
+  pip:
+    name: "{{ yum_baseurl }}/pip_packages/pymongo-3.6.1-cp27-cp27mu-manylinux1_x86_64.whl"
+    state: present
+    #state: "{{ mongodb_pymongo_pip_version is defined | ternary('present', 'latest') }}"
+    #version: "{{ mongodb_pymongo_pip_version | default(omit) }}"
+  when: mongodb_pymongo_from_pip

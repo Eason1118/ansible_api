@@ -1,0 +1,5 @@
+# Lab playbook - sets up the host specific shit
+---
+  configure_bocloud_repo: true
+  backup_repo: true
+  restory_repo: false

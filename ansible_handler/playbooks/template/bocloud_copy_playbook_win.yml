@@ -1,0 +1,67 @@
+---
+
+- hosts: {{ ip_list }}
+  gather_facts: false
+  vars:
+    copy_dest: {{ args.dest }}
+    copy_src: {{ args.src | default("") }}
+    extract: {{ args.decompress | default("no") }}
+  tasks:
+    - name: "Get dest {{ '{{ copy_dest | win_dirname }}' }} stat."
+      win_stat:
+        path: {{ '"{{ copy_dest | win_dirname }}"' }}
+      register: stat
+
+    - name: "Create dest {{ '{{ copy_dest | win_dirname }}' }} directory is not exists."
+      win_file:
+        path: {{ '"{{ copy_dest | win_dirname }}"' }}
+        state: directory
+      when: not stat.stat.exists
+
+    {% if args.decompress is defined and args.decompress %}
+    - name: Copy files {{ args.src }} to {{ args.dest }}
+      win_copy:
+        dest: "c:\\Temp\\/{{ '{{ item | win_dirname }}"' }}
+        src: "{{ bocloud_worker.nfs_path }}/{{ '{{ item }}"' }}
+      with_items:
+        {%- for src in args.src.split(',') %}
+        - {{ src }}
+        {%- endfor %}
+
+    # - name: copy PSCX msi
+    #   win_copy:
+    #     src: {{ bocloud_ansible.packages_path }}/tools/pscx.msi
+    #     dest: "C:\\temp\\pscx.msi"
+
+    # - name: install PSCX msi
+    #   win_packages:
+    #     path: "C:\\temp\\pscx.msi"
+    #     state: present
+
+    - name: extract the dest files
+      win_unzip:
+        src: "c:\\Temp\\/{{ '{{ item | win_dirname }}"' }}
+        dest: {{ args.dest }}
+        delete_archive: yes
+      with_items:
+        {%- for src in args.src.split(',') %}
+        - {{ src }}
+        {%- endfor %}
+    {%- else %}
+    - name: Copy files {{ args.src }} to {{ args.dest }}
+      win_copy:
+        dest: {{ args.dest }}
+        {%- if args.content is defined %}
+        content: "{{ args.content }}"
+        {%- endif %}
+        {%- if args.force is defined %}
+        force: {{ args.force }}
+        {%- endif %}
+      {%- if args.src is defined %}
+        src: "{{ bocloud_worker.nfs_path }}/{{ '{{ item }}"' }}
+      with_items:
+        {%- for src in args.src.split(',') %}
+        - {{ src }}
+        {%- endfor %}
+      {%- endif %}
+    {% endif %}

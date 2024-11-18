@@ -1,0 +1,77 @@
+
+- name: prepare-iscsi | install iscsi client packages
+  yum:
+    name: "{{ item }}"
+    state: present
+  with_items: "{{ iscsi_client_packages }}"
+  when: asm_diskgroups is defined and ansible_os_family == 'RedHat'
+  tags: prepare-iscsi
+
+- name: prepare-iscsi | start iscsi service
+  service: name=iscsi state=started enabled=yes
+  when: asm_diskgroups is defined
+  tags: prepare-iscsi
+
+- name: prepare-iscsi | configure iscsi initiatorname
+  lineinfile:
+    path: /etc/iscsi/initiatorname.iscsi
+    regexp: '^InitiatorName' 
+    insertafter: '^#InitiatorName' 
+    line: "InitiatorName={{ iscsi_server.initiator_name }}"
+  when: asm_diskgroups is defined
+  tags: prepare-iscsi
+
+- name: prepare-iscsi | configure iscsi node authmethod
+  lineinfile:
+    path: /etc/iscsi/iscsid.conf
+    regexp: '^node.session.auth.authmethod' 
+    insertafter: '^#node.session.auth.authmethod' 
+    line: "node.session.auth.authmethod = CHAP"
+  when: asm_diskgroups is defined
+  tags: prepare-iscsi
+
+- name: prepare-iscsi | configure iscsi node login username
+  lineinfile:
+    path: /etc/iscsi/iscsid.conf
+    regexp: '^node.session.auth.username =' 
+    insertafter: '^#node.session.auth.username =' 
+    line: "node.session.auth.username = {{ iscsi_server.user }}"
+  when: asm_diskgroups is defined
+  tags: prepare-iscsi
+
+- name: prepare-iscsi | configure iscsi node account password
+  lineinfile:
+    path: /etc/iscsi/iscsid.conf
+    regexp: '^node.session.auth.password =' 
+    insertafter: '^#node.session.auth.password =' 
+    line: "node.session.auth.password = {{ iscsi_server.password }}"
+  when: asm_diskgroups is defined
+  tags: prepare-iscsi
+
+#- name: prepare-iscsi | restart iscsi service
+#  service: name=iscsi state=restarted
+#  when: asm_diskgroups is defined
+#  tags: prepare-iscsi
+
+- name: prepare-iscsi | discovery iscsi server
+  shell: "iscsiadm --mode discovery --type sendtargets --portal {{ iscsi_server.host }}"
+  when: asm_diskgroups is defined
+  register: discovery_result
+  tags: prepare-iscsi
+
+- name: prepare-iscsi | discovery iscsi server result(debug)
+  debug: var=discovery_result.stdout_lines
+  when: asm_diskgroups is defined
+  tags: prepare-iscsi
+
+- name: prepare-iscsi | login iscsi server
+  shell: "iscsiadm --mode node --targetname {{ iscsi_server.target_name}} --portal {{ iscsi_server.host }} --login"
+  when: asm_diskgroups is defined
+  register: iscsi_login
+  tags: prepare-iscsi
+
+- name: prepare-iscsi | login iscsi server result(debug)
+  debug: var=iscsi_login.stdout_lines
+  when: asm_diskgroups is defined
+  tags: prepare-iscsi
+

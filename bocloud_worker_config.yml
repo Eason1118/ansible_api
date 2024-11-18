@@ -1,0 +1,47 @@
+---
+bocloud_worker:
+  host: '0.0.0.0'
+  port: 18089
+  is_not_db: true
+  flask_debug: true
+  nfs_path: '/home/cmp'
+  init_sql: '/opt/worker/bocloud_worker/common/db/bocloud_worker_db.sql'
+  job_timeout: 600
+  external_mq:
+    exchange: 'worker.direct.exchange'
+    type: 'direct'
+  log:
+    file: '/root/worker/worker/bocloud_worker/log/bocloud_worker.log'
+    level: 'Debug'
+  # example 192.168.10.1-15,192.168.20.*;192.168.100.*:192.168.30.1
+  whitelist: ''
+  blacklist: ''
+bocloud_ansible:
+  playbook_template: '/root/worker/worker/bocloud_worker/ansible_handler/playbooks/template/'
+  playbook_folder: '/root/worker/worker/bocloud_worker/ansible_handler/playbooks/generated/'
+  playbook_repository: '/root/worker/worker/bocloud_worker/ansible_handler/playbooks/repository/'
+  playbook_roles: '/root/worker/worker/bocloud_worker/ansible_handler/roles'
+  packages_path: '/root/ansible/packages'
+  packages_yum_baseurl: 'http://192.168.2.99/base_url/'
+  forks: 100
+rabbitmq:
+  - host: '192.168.91.100'
+    port: 5672
+    user: 'worker'
+    password: '123456'
+    vhost: 'cmp'
+    client_cert: ''
+    client_key: ''
+zookeeper:
+  zk_server: '192.168.91.100:2181'
+  user: 'worker'
+  password: 'Wh5zQ+fVjzQr40vJxd03VA=='
+celery:
+  broker_url: 'redis://192.168.91.100:6379/0'
+  celery_result_backend: 'redis://192.168.91.100:6379/1'
+  celery_queue: 'default'
+  secret_key: 'top-secrity'
+  celery_task_serializer: 'json'
+  celery_task_result_expires: 1200
+  celery_prefetch_multiplier: 4
+  celery_concurrency: 10

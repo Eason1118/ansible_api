@@ -1,0 +1,190 @@
+---
+
+- name: prepare installation
+  hosts: {{ args.manage_config.hostgroup }}
+  vars:
+    yum_baseurl: "{{ bocloud_ansible.packages_yum_baseurl }}"
+    backup_repo: True
+    restory_repo: False
+  roles:
+    - role: bocloud_common
+
+- name: Oracle installatoin
+  hosts: {{ args.manage_config.hostgroup }}
+  become: yes
+  vars:
+    configure_cluster: {{ args.cluster_install }}
+    local_source_dir: "{{ bocloud_ansible.packages_path }}/oracle"
+    yum_baseurl: "{{ bocloud_ansible.packages_yum_baseurl }}"
+    ##################### basic configuration #####################
+    hostgroup: {{ args.manage_config.hostgroup }}
+    device_persistence: {{ args.software_config.device_persistence }}
+    oracle_stage: /u01/stage
+    oracle_stage_remote: /u01/stage
+    configure_ntp: false
+    configure_motd: true
+    configure_interconnect: false
+    configure_ssh: {{ args.cluster_install }}
+    configure_etc_hosts: true
+    install_os_packages: true
+    configure_epel_repo: false
+    configure_public_yum_repo: false
+    disable_selinux: true
+    old_ssh_config: false
+    configure_hugepages: false
+    oracle_user: oracle
+    oracle_group: oinstall
+    {%- if args.cluster_install %}
+    cluster_master: {{ args.manage_config.cluster_master }}
+    {%- endif %}
+    asm_install: {% if args.asm_diskgroups is defined %}true{% else %}false{% endif %}
+    configure_host_disks: {% if args.host_fs_layout is defined %}true{% else %}false{% endif %}
+
+    ##################### oracle database #####################
+    oracle_databases:
+      {%- for database in args.oracle_databases %}
+      - home: {{ args.manage_config.install_name }}
+        oracle_version_db: {{ args.version }}
+        oracle_db_name: {{ database.name }}
+        {%- if args.cluster_install %}
+        oracle_home: "/u01/app/grid/product/{{ args.version }}/grid"
+        {%- else %}
+        oracle_home: "/u01/app/oracle/{{ args.version }}/db1-base"
+        {%- endif %}
+        oracle_db_type: {% if args.cluster_install %}RAC{% else %}SI{% endif %}
+        pdb_prefix: pdb
+        num_pdbs: 0
+        listener_name: {{ args.software_config.listener_name }}
+        listener_port: {{ args.software_config.listener_port }}
+        is_container: {{ args.software_config.is_container }}
+        storage_type: {% if args.asm_diskgroups is defined %}ASM{% else %}FS{% endif %}
+        oracle_db_mem_totalmb: {{ args.software_config.oracle_db_mem_totalmb }}
+        oracle_database_type: {{ args.software_config.oracle_database_type }}
+        redolog_size: {{ args.software_config.redolog_size }}
+        redolog_groups: {{ args.software_config.redolog_groups }}
+        {%- if args.asm_diskgroups is defined %}
+        datafile_dest: {{ args.software_config.oracle_dbf_dir_asm }}
+        recoveryfile_dest: {{ args.software_config.oracle_reco_dir_asm }}
+        {%- else %}
+        datafile_dest: {{ args.software_config.oracle_dbf_dir_fs }}
+        recoveryfile_dest: {{ args.software_config.oracle_reco_dir_fs }}
+        {%- endif %}
+        archivelog: {{ args.software_config.archivelog }}
+        flashback: {{ args.software_config.flashback }}
+        #force_logging: False
+        #redolog_size_in_mb: 100    # ray tan add
+        state: present
+        {% if database.init_parameters is defined %}
+        init_parameters:
+          {%- for parameter in database.init_parameters %}
+          - {name: {{ parameter['name'] }}, value: {{ parameter['value'] }}, scope: {{ parameter['scope'] }}, state: present}
+          {%- endfor %}
+        {%- endif %}
+      {%- endfor %}
+
+    {%- if args.asm_diskgroups is defined %}
+    ##################### ASM diskgroups #####################
+    asm_diskgroups:
+      {%- for groupname, disks in args.asm_diskgroups.items() %}
+      - diskgroup: {{ groupname }}
+        state: present
+        properties:
+          - {redundancy: external, ausize: 4}
+        attributes:
+          - {name: compatible.asm, value: "{{ args.version }}"}
+          - {name: compatible.rdbms, value: "{{ args.version }}.0"}
+        disk:
+          {%- for device in disks %}
+          - {device: {{ device['device'] }}, asmlabel: {{ device['asmlabel'] }} }
+          {%- endfor %}
+      {%- endfor %}
+    {%- endif %}
+    {%- if args.host_fs_layout is defined %}
+    ##################### file system layout #####################
+    host_fs_layout:
+      {%- for fs_layout in args.host_fs_layout %}
+      - vgname: vg{{ fs_layout.name }}
+        state: present
+        filesystem:
+          - {mntp: {{ fs_layout.name }}, lvname: lv{{ fs_layout.name }}, lvsize: 100%FREE, fstype: {{ fs_layout.fstype }} }
+        disk:
+          - {device: {{ fs_layout.device }}, pvname: {{ fs_layout.pvname }} }
+      {%- endfor %}
+    {%- endif %}
+
+    {%- if args.cluster_install %}
+    ##################### grid infrastructure #####################
+    oracle_install_version_gi: {{ args.version }}
+    oracle_gi_cluster_type: {{ args.software_config.oracle_gi_cluster_type }}
+    oracle_home_gi: "/u01/app/grid/product/{{ args.version }}/grid"
+
+    oracle_scan: {{ args.manage_config.oracle_scan }}
+    oracle_vip: -vip
+    oracle_scan_port: {{ args.software_config.oracle_scan_port }}
+    oracle_asm_init_dg: crs
+    oracle_gi_nic_pub: {{ args.manage_config.oracle_gi_nic_pub }}
+    oracle_gi_nic_priv: {{ args.manage_config.oracle_gi_nic_priv }}
+    oracle_gi_gns_subdomain: dbnode.internal.lab
+    oracle_gi_gns_vip: dbnode-cluster-gns.internal.lab.
+    oracle_vip_setting: {{ args.manage_config.vip }}
+    oracle_scanip_setting: {{ args.manage_config.scan_ip }}
+
+    apply_patches_gi: False
+    {%- endif %}
+
+    ##################### database installation configuration #####################
+    apply_patches_db: False
+    db_homes_config:
+      {{ args.manage_config.install_name }}:
+        home: db1-base
+        version: {{ args.version }}
+        edition: EE
+    db_homes_installed:
+      - home: {{ args.manage_config.install_name }}
+        state: present
+        apply_patches: false
+        oracle_version_db: {{ args.version }}
+
+    ##################### oracle manager password #####################
+    {%- for database in args.oracle_databases %}
+    {%- if args.asm_diskgroups is defined %}
+    # GI
+    default_gipass: Oracle123
+    sysasmpassword: Oracle_123
+    asmmonitorpassword: Oracle_123
+    {%- endif %}
+    # DB
+    default_dbpass: {{ database.oracle_password }}
+    dbpasswords:
+      {{ database.name }}:
+        system: {{ database.oracle_password }}
+        sys: {{ database.oracle_password }}
+        dbsnmp: {{ database.oracle_password }}
+        pdbadmin: {{ database.oracle_password }}
+        orclpdb:
+          appuser1: appuser1
+    {%- endfor %}
+
+  roles:
+    - ansible-oracle/roles/common
+    - ansible-oracle/roles/orahost
+    - {role: ansible-oracle/roles/orahost-ssh, when: configure_cluster and not old_ssh_config}
+    - {role: ansible-oracle/roles/orahost-storage, when: asm_install}
+    {%- if args.cluster_install %}
+    - {role: ansible-oracle/roles/oraswgi-install, when: asm_install}
+    {%- endif %}
+    - ansible-oracle/roles/cxoracle
+    - {role: ansible-oracle/roles/oraasm-manage-diskgroups, when: asm_install}
+    - ansible-oracle/roles/oraswdb-install
+    - {role: ansible-oracle/roles/oraswdb-manage-patches, when: apply_patches_db}
+    - ansible-oracle/roles/oradb-manage-db
+    - ansible-oracle/roles/orahost-logrotate
+
+- name: restore original environment
+  hosts: {{ args.manage_config.hostgroup }}
+  vars:
+    backup_repo: False
+    restory_repo: True
+    configure_bocloud_repo: False
+  roles:
+    - role: bocloud_common

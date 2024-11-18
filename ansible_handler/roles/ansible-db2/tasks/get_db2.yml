@@ -1,0 +1,29 @@
+---
+#Download a DB2 copy from a custom URL (Could be a http, an ftp whatever.)
+# - name: Downloading DB2
+#  get_url:
+#    url: "{{db2_binary.url}}"
+#    dest: "{{db2_binary.location}}"
+#  when: db2_binary.url is defined
+
+- name: Copy installer files
+  copy: src={{ db2_binary.location }} dest='{{ db2_binary.dest }}/{{ db2_install_packages }}'
+
+#- name: Create folder for installation files
+#  file: state=directory path="{{db2_binary.dest}}/{{db2_creates}}" mode=777
+- name: Remove old server dir
+  file: state=absent path="{{ db2_binary.dest }}/{{db2_creates}}/"
+  ignore_errors: yes
+
+- name: Create folder for installation files
+  file: state=directory path="{{db2_binary.dest}}/{{db2_creates}}" mode=777
+
+- name: Decompressing DB2 Server
+  unarchive:
+    src: '{{ db2_binary.dest }}/{{ db2_install_packages }}'
+    dest: "{{ db2_binary.dest }}/{{ db2_creates }}/"
+    copy: no
+    mode: 0777
+#    creates: "{{db2_binary.dest}}/{{db2_creates}}/"
+#  command: 'unzip {{ db2_binary.dest }}/{{ db2_binary.location }} -d {{ db2_binary.dest }}/{{db2_creates}}/'
+

@@ -1,0 +1,44 @@
+---
+
+- name: check whether or not the user is set sudo privilege
+  script: ../../roles/ansible-manage-user/scripts/list_remove_sudoers.sh "{{ item }}" false
+  with_items:
+    - "{{ sudoer_info.name }}"
+  register: get_sudoer_info
+
+- debug:
+    msg: "用户没有设置sudo权限！"
+  failed_when: get_sudoer_info["results"][0].stdout == ""
+  when: get_sudoer_info["results"][0].stdout == ""
+
+- name: "Remove special separate sudoer with user_info defined"
+  file:
+    path: "/etc/sudoers.d/{{ item }}_ansible"
+    state: absent
+  with_items: "{{ user_info.name }}"
+  when:
+    - sudoer_remove_special_specs | bool
+    - user_info is defined
+
+- name: "Remove special separate sudoer with sudoer_info defined"
+  file:
+    path: "/etc/sudoers.d/{{ item }}_ansible"
+    state: absent
+  with_items: "{{ sudoer_info.name }}"
+  when:
+    - sudoer_remove_special_specs | bool
+    - sudoer_info is defined
+
+- name: Remove sudoer from /etc/sudoers with user_info defined
+  script: ../scripts/list_remove_sudoers.sh {{ item }} true
+  with_items: "{{ user_info.name }}"
+  when:
+    - sudoer_remove_special_specs | bool
+    - user_info is defined
+
+- name: Remove sudoer from /etc/sudoers with sudoer_info defined
+  script: ../scripts/list_remove_sudoers.sh {{ item }} true
+  with_items: "{{ sudoer_info.name }}"
+  when:
+    - sudoer_remove_special_specs | bool
+    - sudoer_info is defined

@@ -1,0 +1,38 @@
+---
+
+- name: prepare installation
+  hosts: {{ ip_list }}
+  vars:
+    yum_baseurl: "{{ bocloud_ansible.packages_yum_baseurl }}"
+    backup_repo: True
+    restory_repo: False
+  roles:
+    - role: bocloud_common
+
+- hosts: {{ ip_list }}
+  vars:
+    rabbitmq_version: {{ args.version }}
+    rabbitmq_packages_path: {{ bocloud_ansible.packages_path }}/rabbitmq
+    {%- if args.rabbitmq_users is defined %}
+    rabbitmq_users: {{ args.rabbitmq_users }}
+    {%- endif %}
+    {%- if args.rabbitmq_vhosts is defined %}
+    rabbitmq_vhosts: {{ args.rabbitmq_vhosts }}
+    {%- endif %}
+    {%- if args.rabbitmq_plugins is defined %}
+    rabbitmq_plugins: {{ args.rabbitmq_plugins }}
+    {%- endif %}
+    {%- if args.cluster_install %}
+    rabbitmq_cluster: yes
+    {%- endif %}
+  roles:
+    - role: ansible-rabbitmq
+
+- name: restory original environment
+  hosts: {{ ip_list }}
+  vars:
+    backup_repo: False
+    restory_repo: True
+    configure_bocloud_repo: False
+  roles:
+    - role: bocloud_common

@@ -1,0 +1,53 @@
+---
+- hosts: {{ ip_list }}
+  gather_facts: no
+  connection: smart
+
+  vars:
+    - args:
+        server: {{ args.server }}
+
+  # for debug server
+  #vars:
+  #  - args:
+  #      repoPath: "/root/lkx"
+  #      server: True
+  #      name: 'cmp'
+
+  # for debug client
+  #vars:
+  #  - args:
+  #      server: False
+  #      name: 'lkx'
+
+  tasks:
+    - name: Remove {{ args.name }} repository from {{ args.file }} repo file
+      yum_repository:
+        name: {{ args.name }}
+        file: {{ args.file }}
+        state: absent
+      when: "args.server != True"
+  
+    - name: Clean up yum repo
+      command: yum clean all
+      args:
+        warn: no
+      ignore_errors: yes
+      when: "args.server != True"
+
+    - name: uninstall http and createrepo
+      yum:
+        name: {{ '"{{ item }}"' }}
+        state: absent
+      with_items:
+        - httpd
+        - createrepo
+      ignore_errors: true
+      when: "args.server == True"
+
+    - name: execute script to remove yum repo files
+      raw: |
+        if [[ ! -z $(basename {{ args.repoPath}}) && -d /var/www/html/$(basename {{ args.repoPath }}) ]];then
+          rm -rf /var/www/html/$(basename {{ args.repoPath }})
+        fi
+      when: "args.server == True"

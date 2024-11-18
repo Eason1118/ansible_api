@@ -1,0 +1,64 @@
+---
+
+- name: prepare installation
+  hosts: {{ ip_list }}
+  vars:
+    yum_baseurl: "{{ bocloud_ansible.packages_yum_baseurl }}"
+    backup_repo: True
+    restory_repo: False
+  roles:
+    - role: bocloud_common
+
+- hosts: {{ ip_list }}
+  vars:
+    {%- if args.software_config is defined %}
+    {{ args.software_config }}
+    {%- endif %}
+    {%- if args.nginx_http_params is defined%}
+    nginx_http_params:
+    {%- for key, value in args.nginx_http_params.items() %}
+      {%- if key == "options" %}
+        {%- for option_value in value %}
+      - {{ option_value }}
+        {%- endfor %}
+      {%- else %}
+      - {{ key }} {{ value }}
+      {%- endif %}
+    {%- endfor %}
+    {%- endif %}
+    {%- if args.nginx_sites is defined%}
+    nginx_sites:
+    {%- for site_name, value in args.nginx_sites.items() %}
+      {{ site_name }}:
+        {%- for key, key_value in value.items() %}
+          {%- if key == "location" %}
+            {%- for location in key_value %}
+          - location {{ location }}
+            {%- endfor %}
+          {%- else %}
+          - {{ key }} {{ key_value }}
+          {%- endif %}
+        {%- endfor %}
+      {%- endfor %}
+    {%- endif %}
+    {%- if args.nginx_configs is defined%}
+    nginx_configs:
+    {%- for key, value in args.nginx_configs.items() %}
+      {{ key }}:
+        {% for item in value %}
+        - {{ item }}
+        {% endfor %}
+    {%- endfor %}
+    {%- endif %}
+
+  roles:
+    - role: ansible-nginx
+
+- name: restory original environment
+  hosts: {{ ip_list }}
+  vars:
+    backup_repo: False
+    restory_repo: True
+    configure_bocloud_repo: False
+  roles:
+    - role: bocloud_common

@@ -1,0 +1,41 @@
+---
+- name: Install any necessary dependencies [Debian/Ubuntu]
+  apt: 
+    name: "{{ item }}" 
+    state: present 
+    update_cache: yes 
+    cache_valid_time: 3600
+  with_items:
+    - python-httplib2
+    - python-apt
+    - curl
+    - apt-transport-https
+
+- name: Check if Telegraf is installed [Debian/Ubuntu]
+  command: dpkg-query -l telegraf
+  register: apt_check
+  ignore_errors: yes
+- debug: var=apt_check
+
+- name: Upload Telegraf package file if Telegraf is not installed [[Debian/Ubuntu]
+  copy:
+    src: "{{ telegraf_install_url }}/telegraf_{{ telegraf_version }}-1_amd64.deb"
+    dest: /tmp/
+    force: yes
+    backup: yes
+  when: telegraf_install_url is defined and telegraf_install_url != None and apt_check.rc != 0
+  register: is_upload
+
+- debug: var=is_upload.changed
+
+- name: Install Telegraf package [Debian/Ubuntu]
+  apt:
+    deb: /tmp/telegraf_{{ telegraf_version }}-1_amd64.deb
+    state: present
+  when: telegraf_install_url is defined and telegraf_install_url != None and apt_check.rc != 0
+
+- name: Remove Uploaded Telegraf package file if Uploaded [Debian/Ubuntu]
+  file:
+    path: /tmp/telegraf_{{ telegraf_version }}-1_amd64.deb
+    state: absent
+  when: telegraf_install_url is defined and telegraf_install_url != None and is_upload.changed|bool == true

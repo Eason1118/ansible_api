@@ -1,0 +1,34 @@
+---
+db2_tarball_file: "{{db2_version}}_linuxx64_{{db2_unarchive}}.tar.gz"
+db2_prod: "DB2_SERVER_EDITION"
+db2_file: "/opt/ibm/db2/{{db2_version}}"
+db2_lic_agreement: "ACCEPT"
+db2_install_type: "TYPICAL"
+db2_make_cache: "no"
+db2_instance: "DB2INST"
+db2_name: "db2inst1"
+db2_group_name: "db2iadm1"
+db2_fenced_username: "db2fenc1"
+db2_fenced_group_name: "db2fadm1"
+db2_create_instances: true
+db2_ansible_os_family: "CentOS"
+yum_repo: 'CentOS7-Base-163.repo'
+db2_packages:
+   - pam
+   - pam-devel.i686
+   - libaio
+   - compat-libstdc++-33.i686
+   - compat-libstdc++-33
+   - libstdc++-devel.i686
+   - libstdc++
+   - ksh
+   - unzip
+
+db2_instances:
+   - instance: "DB2INST"
+     name: "db2inst1"
+     group_name: "db2iadm1"
+     fenced_username: "db2fenc1"
+     fenced_group_name: "db2fadm1"
+
+db2_make_cache: no

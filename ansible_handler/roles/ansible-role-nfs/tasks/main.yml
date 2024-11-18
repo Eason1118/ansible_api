@@ -1,0 +1,7 @@
+---
+
+- include_tasks: nfs_server.yml
+  when: nfs_server
+
+- include_tasks: nfs_client.yml
+  when: not nfs_server

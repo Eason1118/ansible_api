@@ -1,0 +1,20 @@
+---
+
+- name: check whether or not the user existed
+  win_user: 
+    name: "{{ item }}"
+    state: query
+  with_items: "{{ user_info.name }}"
+  register: user_state
+
+- debug:
+    msg: "用户不存在！"
+  failed_when: user_state["results"][0].state == "absent"
+  when: user_state["results"][0].state == "absent"
+
+- name: delete windows user
+  win_user:
+    name: "{{ item }}"
+    state: absent
+  with_items: "{{ user_info.name }}"
+

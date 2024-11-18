@@ -1,0 +1,14 @@
+---
+# tasks file for vmwaretools
+
+- import_tasks: RedHat.yml
+  when: ansible_os_family == 'RedHat'
+
+- import_tasks: Ubuntu.yml
+  when: ansible_distribution == 'Ubuntu'
+
+- import_tasks: Suse.yml
+  when: ansible_os_family == 'Suse'
+
+- import_tasks: Windows.yml
+  when: ansible_os_family == 'Windows'

@@ -1,0 +1,20 @@
+---
+#postgresql_version: "8.4"
+#postgresql_data_dir: "/var/lib/pgsql/data"
+#postgresql_bin_path: "/usr/bin"
+#postgresql_config_path: "/var/lib/pgsql/data"
+#postgresql_daemon: postgresql
+#postgresql_packages:
+#  - postgresql
+#  - postgresql-server
+#  - postgresql-contrib
+#  - postgresql-libs
+
+#postgresql_full_version: "12.0"
+#postgresql_version: "12"
+#postgresql_version_date: "20181230"
+
+postgresql_data_dir: "/var/lib/pgsql/{{postgresql_version}}/data"
+postgresql_download_path: "/tmp"
+
+postgresql_config_path: "{{postgresql_data_dir}}"

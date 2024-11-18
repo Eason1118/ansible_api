@@ -1,0 +1,45 @@
+---
+
+
+  - name: copy jdk software to remote host
+    win_copy: src={{ java_packages_dir }}/{{ java_packages_name }}  dest=C:\\Users\\Administrator\\Desktop\\
+# jdk-7u2-windows-x64.exe  jdk1.8.0_191
+  - name: install java
+    win_package:
+#      path: C:\\Users\\Administrator\\Desktop\\{{ jdk_package }}{{ java_subversion }}-windows-x64.exe
+      path: C:\\Users\\Administrator\\Desktop\\{{ java_packages_name }}
+      product_id: 8u191
+      arguments:
+        - /s
+        - /quiet
+      state: present
+
+  - name: Add JAVA_HOME Env
+    win_path:
+      name: JAVA_HOME
+#      elements: C:\Program Files\Java\jdk{{ java_major_version }}{{ java_subversion }}
+      elements: C:\Program Files\Java\jdk1.{{ java_version }}.0_{{ java_subversion }}
+      scope: machine
+      state: present
+
+  - name: Add JAVA_BIN Env
+    win_path:
+      name: PATH
+#      elements: C:\Program Files\Java\jdk{{ java_major_version }}{{ java_subversion }}\bin
+      elements: C:\Program Files\Java\jdk1.{{ java_version }}.0_{{ java_subversion }}\bin
+      scope: machine
+      state: present
+
+  - name: Reboot Windows Server
+    win_reboot:
+      msg: "Restart the server 3 seconds later"
+      post_reboot_delay: 3
+      test_command: whoami
+
+  - name: Delete java file
+    win_file:
+      path: C:\\Users\\Administrator\\Desktop\\{{ java_packages_name }}
+      state: absent
+      
+  - debug: msg="success"
+

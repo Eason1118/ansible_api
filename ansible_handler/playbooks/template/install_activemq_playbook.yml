@@ -1,0 +1,43 @@
+---
+
+- name: prepare installation
+  hosts: {{ ip_list }}
+  vars:
+    yum_baseurl: "{{ bocloud_ansible.packages_yum_baseurl }}"
+    backup_repo: True
+    restory_repo: False
+  roles:
+    - role: bocloud_common
+
+- hosts: {{ ip_list }}
+  vars:
+    java_version: 8
+    java_subversion: 161
+    packages_dir: "{{ bocloud_ansible.packages_path }}"
+    java_download_from_oracle: False
+    java_set_javahome: True
+    java_depended: True
+    amq_version: {{ args.version }}
+    packages_dir: {{ bocloud_ansible.packages_path }}
+    {%- if args.authentication is defined %}
+    activemq_authentication: {{ args.authentication }}
+    {%- endif %}
+    {%- if args.queue is defined %}
+    activemq_authorization_queue: {{ args.queue }}
+    {%- endif %}
+    {%- if args.topic is defined %}
+    activemq_authorization_topic: {{ args.topic }}
+    {%- endif %}
+
+  roles:
+    - role: ansible-oracle-java
+    - role: ansible-role-activemq
+
+- name: restory original environment
+  hosts: {{ ip_list }}
+  vars:
+    backup_repo: False
+    restory_repo: True
+    configure_bocloud_repo: False
+  roles:
+    - role: bocloud_common

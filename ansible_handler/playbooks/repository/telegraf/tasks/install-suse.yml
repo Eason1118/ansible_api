@@ -1,0 +1,41 @@
+---
+- name: Install any necessary dependencies [Suse]
+  zypper:
+    name: "{{ item }}"
+    state: present
+  with_items:
+    - curl
+
+- name: Check if Telegraf is installed [Suse]
+  command: rpm -q telegraf
+  ignore_errors: true
+  register: rpm_check
+  failed_when: rpm_check.rc > 1
+
+- name: Remove old Telegraf files [Suse]
+  file:
+    path: "{{ telegraf_configuration_dir }}"
+    state: absent
+  ignore_errors: yes
+  when: telegraf_install_url is defined and telegraf_install_url != None and rpm_check.rc == 1
+
+- name: Upload Telegraf package file if Telegraf is not installed [RHEL/CentOS]
+  copy:
+    src: "{{ telegraf_install_url }}/telegraf-{{ telegraf_version }}-1.x86_64.rpm"
+    dest: /tmp/
+    force: yes
+    backup: yes
+  when: telegraf_install_url is defined and telegraf_install_url != None and rpm_check.rc == 1
+  register: is_upload
+
+- name: Install Telegraf from URL [Suse]
+  zypper:
+    name: /tmp/telegraf-{{ telegraf_version }}-1.x86_64.rpm
+    state: present
+  when: telegraf_install_url is defined and telegraf_install_url != None and rpm_check.rc == 1
+
+- name: Remove Uploaded Telegraf package file if Uploaded [Suse]
+  file:
+    path: /tmp/telegraf-{{ telegraf_version }}-1.x86_64.rpm
+    state: absent
+  when: telegraf_install_url is defined and telegraf_install_url != None and is_upload

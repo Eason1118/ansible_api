@@ -1,0 +1,63 @@
+---
+
+- name: install ruby2.4.4
+  yum:
+    name: "{{ yum_baseurl }}/spec_packages/ruby-2.4.4-6.el7.centos.x86_64.rpm"
+    state: present
+  when: "inventory_hostname==groups['redis_master'][0] and groups['redis_master']|length>=3"
+
+- name: upload redis gems
+  copy:
+    src: redis-4.0.2.gem
+    dest: /opt/redis-4.0.2.gem
+  when: "inventory_hostname==groups['redis_master'][0] and groups['redis_master']|length>=3"
+  
+- name: install redis.gems local
+  shell: gem install /opt/redis-4.0.2.gem --local
+  ignore_errors: yes
+  when: "inventory_hostname==groups['redis_master'][0] and groups['redis_master']|length>=3"
+  
+- name: find client
+  shell: find / -name client.rb|grep redis
+  register: client_path
+  ignore_errors: yes
+  when: "inventory_hostname==groups['redis_master'][0] and groups['redis_master']|length>=3"
+  
+- name: set passwd
+  lineinfile:
+    path: "{{ client_path.stdout }}"
+    regexp: ':password => nil'
+    line: '      :password => "{{ redis_password }}",'
+  when: "inventory_hostname==groups['redis_master'][0] and groups['redis_master']|length>=3 and redis_password"
+  
+- name: upload redis-trib.rb
+  copy:
+    src: redis-trib.rb
+    dest: /usr/local/bin/redis-trib.rb
+    mode: 0755
+  when: "inventory_hostname==groups['redis_master'][0] and groups['redis_master']|length>=3"
+  
+- name: stop firewall service
+  service:
+    name: firewalld
+    state: stopped
+  when: ansible_os_family == 'RedHat'
+  ignore_errors: yes
+
+- name: create redis_cluster
+  shell: redis-trib.rb create --replicas 1 {{ redis_master_nodes }} {{ redis_slave_nodes }}
+  vars:
+    - redis_master_nodes: "{{ groups['redis_master']|join (':' ~ redis_port ~ ' ') }}:{{ redis_port }}"
+    - redis_slave_nodes: "{{ groups['redis_slave']|join (':' ~ redis_port ~ ' ') }}:{{ redis_port }}"
+  ignore_errors: yes
+  when: "inventory_hostname==groups['redis_master'][0] and groups['redis_master']|length>=3"
+ 
+- name: sleep for 10 seconds and continue with play
+  wait_for: timeout=10
+
+- name: check cluster status
+  shell: redis-cli -h {{ inventory_hostname }} -p {{ redis_port }} -a {{ redis_password }} cluster info
+  register: cluster_status
+  failed_when: "'cluster_state:ok' not in cluster_status.stdout"
+  when: "inventory_hostname==groups['redis_master'][0] and groups['redis_master']|length>=3"
+

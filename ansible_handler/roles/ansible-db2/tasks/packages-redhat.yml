@@ -1,0 +1,22 @@
+---
+#  - name: Installing OL Public repository
+#    copy: src="{{yum_repo}}" dest='/etc/yum.repos.d/{{yum_repo}}'
+#    tags: download
+    
+#  - name: Installing DB2 pre requisites packages - RedHat
+#    yum: name="{{ item }}" state=installed update_cache={{db2_make_cache}} disable_gpg_check=yes
+#    tags: ['packages', 'setup']
+#    with_items: "{{ db2_packages }}"
+  - name: Copy packages files
+    copy: src=packages.tar dest='/tmp/'
+
+  - name: Decompressing packages
+    unarchive:
+      src: '/tmp/packages.tar'
+      dest: "/tmp/"
+      copy: no
+      mode: 0777
+
+  - name: RPM install BD2 pre requisites packages
+    shell: yum install -y /tmp/packages/*
+    ignore_errors: yes

@@ -1,0 +1,55 @@
+---
+# tasks file for vmwaretools/RedHat
+- name: Remove the open-vm-tools if they are installed not to block vmware-tools installation
+  yum:
+    name: open-vm-tools
+    state: absent
+  when: ansible_distribution_major_version|int <= 6
+
+- name: Check vmware-tools directory exists
+  local_action: stat path={{ packages_dir }}/vmwaretools/rhel{{ ansible_distribution_major_version }}/
+  register: result
+  failed_when: not result.stat.exists
+
+- name: Download vmware-tools file for x86_64/amd64 to /tmp
+  copy:
+    src: "{{ item }}"
+    dest: /tmp/
+    force: yes
+  with_fileglob:
+    - "{{ packages_dir }}/vmwaretools/rhel{{ ansible_distribution_major_version }}/{{ ansible_architecture }}/*.rpm"
+
+# vmware-tools-esx-kmods and vmware-tools-esx-nox for rhel 6
+# open-vm-tools for rhel 7
+- name: Install vmware-tools
+  raw: cd /tmp/ ; yum install -y *.rpm
+  register: command_result
+  failed_when: command_result.rc !=0 and not "'Nothing to do' in command_result.stdout"
+
+#- name: Install vmware-tools
+#  yum:
+#    name: "{{ item }}"
+#  with_items:
+#    - vmware-tools-esx-nox
+#    - vmware-tools-esx-kmods
+#  when: ansible_distribution_major_version|int <= 6
+#
+#- name: Installing Open VMware Tools (open-vm-tools) for CentOS/RHEL 7 and higher
+#  yum:
+#    name: open-vm-tools
+#  when: ansible_distribution_major_version|int >= 7
+
+# vmtoolsd needs to be started on VMware enabled VM, otherwise it will fail to start which breaks idempotency tests
+- name: Start vmtoolsd and enable vmtoolsd to start during boot for CentOS/RHEL 7 and higher
+  service:
+    name: vmtoolsd
+    state: started
+    enabled: yes
+  when: ansible_distribution_major_version|int >= 7 and ansible_virtualization_type == 'VMware'
+
+- name: Start and enable vmware-tools-services during boot for CentOS/RHEL 6 and higher
+  service:
+    name: vmware-tools-services
+    state: started
+    enabled: yes
+  when: ansible_distribution_major_version|int <= 6

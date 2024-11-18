@@ -1,0 +1,46 @@
+---
+    - name: Check if Telegraf is installed [Windows]
+      win_service:
+        name: Telegraf Data Collector Service
+      register: service_info
+
+    - name: Upload Telegraf zip file if not installed [Windows]
+      win_copy:
+        src: "{{ telegraf_install_url }}/telegraf-{{ telegraf_version }}_windows_amd64.zip"
+        dest: C:\Program Files\
+      when: not service_info.exists
+
+    - name: Unzip Telegraf zip file if not installed [Windows]
+      win_unzip:
+        src: C:\Program Files\telegraf-1.3.3_windows_amd64.zip
+        dest: C:\Program Files\
+      when: not service_info.exists
+
+    - name: Create Telegraf Data Collector Service [Windows]
+      win_service:
+        name: Telegraf Data Collector Service
+        path: C:\Program Files\Telegraf\telegraf.exe
+      when: not service_info.exists
+
+    - name: Set templatized Telegraf configuration [Windows]
+      win_template:
+        src: ../repository/telegraf/templates/windows_telegraf.conf.j2
+        dest: C:\Program Files\Telegraf\telegraf.conf
+      when: telegraf_template_configuration
+
+    - name: Start Telegraf Data Collector Service [Windows]
+      win_service:
+        name: Telegraf Data Collector Service
+        start_mode: auto
+        state: restarted
+
+    - name: Get Telegraf Data Collector Service State [Windows]
+      win_service:
+        name: Telegraf Data Collector Service
+      register: telegraf_service_status
+
+    - name: assert running [Windows]
+      assert:
+        that:
+          - "telegraf_service_status.state == \"running\""
+      when: telegraf_start_service

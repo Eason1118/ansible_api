@@ -1,0 +1,151 @@
+---
+- hosts: {{ ip_list }}
+  gather_facts: no
+  connection: smart
+
+  vars:
+    - args:
+        server: {{ args.server }}
+        clean: {{ args.clean }}
+
+  # for debug server
+  #vars:
+  #  - args:
+  #      baseurl: "http://192.168.2.85/yum"
+  #      repoPath: "/root/lkx"
+  #      server: True
+  #      name: 'cmp'
+
+  # for debug client
+  #vars:
+  #  - args:
+  #      baseurl: "http://192.168.1.151/lkx"
+  #      server: False
+  #      name: 'lkx'
+  #      description: 'lkx test'
+
+  tasks:
+    - name: check dist rpm dir exists
+      find:
+        paths: '{{ args.repoPath }}'
+        patterns: '*rpm'
+      register: files_to_delete
+      when: "args.server == true"
+
+    - name: assert rpm files exist
+      assert:
+        that:
+          - "files_to_delete.files|length > 0"
+      when: "args.server == true"
+
+    - name: stop firewalld
+      raw: "systemctl stop firewalld ; systemctl disable firewalld"
+      ignore_errors: yes
+  
+    - name: stop firewalld
+      raw: "iptables -F"
+  
+    - name: stop selinux in selinux config
+      raw: "sed -i 's#SELINUX=(.*)#SELINUX=disabled#g' /etc/selinux/config"
+  
+    - name: stop selinux now
+      raw: "getenforce | grep -iq 'Enforcing' && setenforce 0"
+      ignore_errors: yes
+
+    - name: mkdir /etc/yum.repos.d/bak
+      file:
+        dest: /etc/yum.repos.d/bak
+        mode: 0777
+        owner: root
+        group: root
+        state: directory
+      when: "args.server == true or args.clean == true"
+  
+    - name: backup old repo
+      shell: mv /etc/yum.repos.d/*.repo /etc/yum.repos.d/bak
+      ignore_errors: yes
+      when: "args.server == true or args.clean == true"
+  
+    - name: Add cmp yum repository
+      yum_repository:
+        name: cmp
+        description: CMP YUM REPO
+        baseurl: '{{ args.baseurl }}'
+        gpgcheck: 0
+      when: "args.server == true"
+
+    - name: Add {{ args.name }} yum repository
+      yum_repository:
+        name: '{{ args.name }}'
+        file: '{{ args.file }}'
+        enabled: yes
+        description: '{{ args.description }}'
+        {% if args.baseurl %}
+        baseurl: '{{ args.baseurl }}'
+        {% endif %}
+        {% if args.mirrorlist %}
+        mirrorlist: {{ args.mirrorlist }}
+        {% endif %}
+        {% if args.metalink %}
+        metalink: {{ args.metalink }}
+        {% endif %}
+        {% if args.failovermethod %}
+        failovermethod: {{ args.failovermethod }}
+        {% endif %}
+        {% if args.gpgcheck == 1 %}
+        gpgcheck: yes
+        {% if args.gpgkey %}
+        gpgkey: {{ args.gpgkey }}
+        {% endif %}
+        {% elif args.gpgcheck == 0 %}
+        gpgcheck: no
+        {% endif %}
+      when: "args.server == false"
+  
+    - name: clean all yum
+      raw: "yum clean all"
+  
+    - name: install some base rpm files
+      yum:
+        name: {{ '"{{ item }}"' }}
+        enablerepo: cmp
+        state: present
+      with_items:
+        - createrepo
+        - httpd
+      when: "args.server == true"
+
+    - name: execute script to create yum repo
+      raw: |
+        cd $(dirname {{ args.repoPath }})
+        createrepo $(basename {{ args.repoPath }})
+        if [[ ! -z $(basename {{ args.repoPath}}) && -d /var/www/html/$(basename {{ args.repoPath }}) ]];then
+          rm -f /var/www/html/$(basename {{ args.repoPath }})
+        fi
+        ln -s {{ args.repoPath }} /var/www/html/$(basename {{ args.repoPath }})
+        service httpd restart
+      register: result
+      when: "args.server == true"
+
+    - debug: var=result
+      when: "args.server == true"
+
+    # remove cmp repo
+    - name: Restore initial repo file
+      raw: mv /etc/yum.repos.d/bak/*.repo /etc/yum.repos.d/; rm -rf /etc/yum.repos.d/bak/
+      ignore_errors: yes
+      when: "args.server == true"
+  
+    - name: Remove cmp repo file
+      file:
+        path: /etc/yum.repos.d/cmp.repo
+        state: absent
+      ignore_errors: yes
+      when: "args.server == true"
+  
+    - name: Clean up yum repo
+      command: yum clean all
+      args:
+        warn: no
+      ignore_errors: yes
+      when: "args.server == true"

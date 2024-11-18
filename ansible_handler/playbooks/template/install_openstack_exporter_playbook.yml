@@ -1,0 +1,17 @@
+---
+
+- hosts: {{ ip_list }}
+
+  vars:
+    packages_path: {{ bocloud_ansible.packages_path }}
+    packages_yum_baseurl: {{ bocloud_ansible.packages_yum_baseurl }}
+    listen_port: {{ args.config.listen_port }}
+    cloud: {{ args.config.cloud }}
+    openstack_allocation_ratio_vcpu: {{ args.config.openstack_allocation_ratio_vcpu }}
+    openstack_allocation_ratio_ram: {{ args.config.openstack_allocation_ratio_ram }}
+    openstack_allocation_ratio_disk: {{ args.config.openstack_allocation_ratio_disk }}
+    novarc: {{ args.novarc }}
+
+  roles:
+    - role: ansible-openstack-exporter
+

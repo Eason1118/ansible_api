@@ -1,0 +1,49 @@
+# Common playbook - sets up the host generic stuff
+---
+  - name: original yum repo backup
+    shell: cd /etc/yum.repos.d/; rename .repo .bocloud_backup *.repo
+    when: backup_repo and ansible_os_family == 'RedHat'
+    ignore_errors: true
+    tags:
+     - baserepo
+
+  - name: add worker local base yum repo
+    yum_repository:
+      name: bocloud-base-packages
+      description: bocloud basical yum repo
+      baseurl: "{{ yum_baseurl }}/{{ ansible_distribution }}_base"
+      gpgcheck: False
+    when: configure_bocloud_repo and ansible_os_family == 'RedHat'
+    ignore_errors: true
+    tags:
+     - baserepo
+
+  - name: add yum repo with matched Linux version
+    yum_repository:
+      name: linux-version-packages
+      description: bocloud yum repo for linux version
+      baseurl: "{{ yum_baseurl }}/{{ ansible_distribution }}_7.{{ ansible_distribution_version.split('.')[1] }}"
+      gpgcheck: False
+    when: configure_bocloud_repo and ansible_os_family == 'RedHat' and
+          (ansible_distribution_version.startswith('7.1') or
+          ansible_distribution_version.startswith('7.2') or
+          ansible_distribution_version.startswith('7.3') or
+          ansible_distribution_version.startswith('7.4') or
+          ansible_distribution_version.startswith('7.5'))
+    ignore_errors: true
+    tags:
+     - baserepo
+
+  - name: original yum repo restroy
+    shell: cd /etc/yum.repos.d/; rename .bocloud_backup .repo *.bocloud_backup
+    when: restory_repo and ansible_os_family == 'RedHat'
+    ignore_errors: true
+    tags:
+     - baserepo
+
+  - name: yum clean all
+    shell: yum clean all
+    when: restory_repo and ansible_os_family == 'RedHat'
+    ignore_errors: true
+    tags:
+     - baserepo

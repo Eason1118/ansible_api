@@ -1,0 +1,57 @@
+# Common playbook - sets up the host generic stuff
+---
+
+#  - name: Add {{ default_user }} user
+#    user: name={{ default_user }} state=present password={{ default_user_password }}
+#    tags:
+#     - user
+
+#  - name: Add {{ default_user }} to sudoers
+#    template: src=sudoers.j2 dest=/etc/sudoers.d/{{ default_user }} owner=root mode=0644
+#    tags:
+#     - sudoadd
+
+#  - name: Set up authorized_keys for {{ default_user }}
+#    authorized_key: user={{ default_user }} key="{{ item }}"
+#    with_file:
+#     - "~/.ssh/authorized_keys"
+#    tags:
+#     - keys
+
+#  - name: Install EPEL Repo
+#    yum: name={{ epel_rpm }} state=installed
+#    when: configure_epel_repo and ansible_os_family == 'RedHat'
+#    tags:
+#     - epelrepo
+
+  - name: Get newest repo-file for OL (public-yum)
+    get_url: dest={{ repo_dir}}/{{ ol_repo_file }}  url=http://public-yum.oracle.com/{{ ol_repo_file }} backup=yes
+    when: configure_public_yum_repo and ansible_distribution == 'OracleLinux'
+    tags:
+     - ol6repo
+
+  - name: Install common packages OL/RHEL
+    yum: name={{ common_packages }} state=installed
+    when: install_os_packages and ansible_os_family == 'RedHat'
+    tags:
+      - commonpackages
+
+  - name: Install common packages SLES12
+    zypper: name={{ item }} state=installed
+    with_items: "{{ common_packages_sles }}"
+    when: install_os_packages and ansible_os_family == 'Suse'
+    tags:
+      - commonpackages
+
+  - name: Start and enable NTP
+    service: name=ntpd  state=started  enabled=yes
+    when: configure_ntp
+
+  - name: Add motd
+    template: src=motd.j2 dest=/etc/motd
+    tags: motd
+    when: configure_motd
+
+  - name: change host name with inventory_hostname
+    hostname: name={{ inventory_hostname }}
+    when: ansible_hostname != inventory_hostname

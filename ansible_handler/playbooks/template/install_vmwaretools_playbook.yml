@@ -1,0 +1,9 @@
+---
+
+- hosts: {{ ip_list }}
+
+  vars:
+    packages_dir: {{ bocloud_ansible.packages_path }}
+
+  roles:
+    - role: ansible-role-vmwaretools

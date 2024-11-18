@@ -1,0 +1,16 @@
+---
+
+- handlers:
+  - include: {{bocloud_ansible.playbook_repository}}/telegraf/handlers/main.yml
+  hosts: {{ ip_list }}
+  tasks:
+  {%- if is_windows is sameas true %}
+  - include: {{bocloud_ansible.playbook_repository}}/telegraf/tasks/windows.yml
+  {%- else %}
+  - include: {{bocloud_ansible.playbook_repository}}/telegraf/tasks/main.yml
+  {% endif %}
+  vars:
+    telegraf_plugins_extra: {{ args.input_filters }}
+
+  vars_files: 
+  - ./../../../telegraf_config.yml

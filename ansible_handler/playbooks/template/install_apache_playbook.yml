@@ -1,0 +1,62 @@
+---
+
+- name: prepare installation
+  hosts: {{ ip_list }}
+  vars:
+    yum_baseurl: "{{ bocloud_ansible.packages_yum_baseurl }}"
+    backup_repo: True
+    restory_repo: False
+  roles:
+    - role: bocloud_common
+
+- name: install&configure apache service
+  hosts: {{ ip_list }}
+  vars:
+  {%- if args.software_config is defined %}
+  {%- if args.software_config.apache_listen_ip is defined %}
+    apache_listen_ip: "{{ args.software_config.apache_listen_ip }}"
+  {%- endif %}
+  {%- if args.software_config.apache_listen_port is defined %}
+    apache_listen_port: {{ args.software_config.apache_listen_port }}
+  {%- endif %}
+  {%- if args.software_config.apache_listen_port_ssl is defined %}
+    apache_listen_port_ssl: {{ args.software_config.apache_listen_port_ssl }}
+  {%- endif %}
+  {%- endif %}
+  {%- if args.apache_vhosts is defined %}
+    apache_create_vhosts: true
+    apache_vhosts:
+  {%- for vhost in args.apache_vhosts %}
+      - servername: {{ vhost.servername }}
+        documentroot: {{ vhost.documentroot }}
+      {%- if vhost.allow_override is defined %}
+        allow_override: {{ vhost.allow_override }}
+      {%- endif %}
+      {%- if vhost.options is defined %}
+        options: "{{ vhost.options }}"
+      {%- endif %}
+      {%- if vhost.serveradmin is defined %}
+        serveradmin: {{ vhost.serveradmin }}
+      {%- endif %}
+      {%- if vhost.serveralias is defined %}
+        serveralias: {{ vhost.serveralias }}
+      {%- endif %}
+      {%- if vhost.extra_parameters is defined %}
+        extra_parameters: |
+        {%- for parameter in args.extra_parameters %}
+          {{ parameter }}
+        {%- endfor %}
+      {%- endif %}
+  {%- endfor %}
+  {%- endif %}
+  roles:
+    - role: ansible-role-apache
+
+- name: restory original environment
+  hosts: {{ ip_list }}
+  vars:
+    backup_repo: False
+    restory_repo: True
+    configure_bocloud_repo: False
+  roles:
+    - role: bocloud_common

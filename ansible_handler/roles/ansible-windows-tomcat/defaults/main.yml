@@ -1,0 +1,11 @@
+---
+jdk_package: jdk-8u
+#java_major_version: 1.8.0_
+#java_minor_version: 162
+#tomcat_packages_dir: /root/ansible/packages/oracle_java/8u191
+#packages_name: jdk-8u191-windows-x64.exe
+#java_subversion: 8u191
+#java_major_version: {{ java_version.split('u')[0] }}
+#java_minor_version: {{ java_version.split('u')[-1] }}
+#tomcat_major_version: {{ tomcat_packages_name.split('-w')[0] }}
+

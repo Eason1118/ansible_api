@@ -1,0 +1,76 @@
+---
+# Channel of Telegraf to install
+telegraf_install_version: stable
+
+# The user and group telegraf should run under (should be set to telegraf unless needed otherwise)
+telegraf_runas_user: telegraf
+telegraf_runas_group: telegraf
+
+# If yes, service will be started. Will not be started if set to no.
+telegraf_start_service: yes
+telegraf_start_delay: 2
+
+# If yes, will overwrite the packaged configuration with an Asnible/jinja2 template
+telegraf_template_configuration: yes
+
+# Path for finding Telegraf data. Added for backwards-compatibility.
+telegraf_binary_path: /usr/bin/telegraf
+telegraf_configuration_dir: /etc/telegraf
+
+# Configuration Variables
+telegraf_tags:
+
+telegraf_agent_interval: 10s
+telegraf_round_interval: "true"
+telegraf_metric_batch_size: "1000"
+telegraf_metric_buffer_limit: "10000"
+
+telegraf_collection_jitter: 0s
+telegraf_flush_interval: 10s
+telegraf_flush_jitter: 0s
+telegraf_precision: ""
+telegraf_logfile: ""
+telegraf_debug: "false"
+telegraf_quiet: "false"
+telegraf_hostname:
+telegraf_omit_hostname: "false"
+# for windows
+telegraf_flush_buffer_when_full: "true"
+telegraf_install_url: "/home/emaas/telegraf/packages"
+telegraf_version: "1.3.3"
+
+telegraf_influxdb_urls:
+  - http://192.168.1.244:8086
+telegraf_influxdb_database: bocloud
+telegraf_influxdb_retention_policy:
+telegraf_influxdb_write_consistency: any
+telegraf_influxdb_ssl_ca:
+telegraf_influxdb_ssl_cert:
+telegraf_influxdb_ssl_key:
+telegraf_influxdb_insecure_skip_verify:
+
+telegraf_influxdb_timeout: 5s
+telegraf_influxdb_username: bocloud
+telegraf_influxdb_password: bocloud
+telegraf_influxdb_user_agent:
+telegraf_influxdb_udp_payload:
+
+telegraf_plugins_base:
+  - name: mem
+  - name: system
+  - name: net
+  - name: cpu
+    options:
+      percpu: "true"
+      totalcpu: "true"
+      fielddrop:
+        - "time_*"
+  - name: disk
+    options:
+      mountpoints:
+        - "/"
+  - name: diskio
+    options:
+      skip_serial_number: "true"
+
+telegraf_plugins: "{{ telegraf_plugins_base }} + {{ telegraf_plugins_extra | default([]) }}"

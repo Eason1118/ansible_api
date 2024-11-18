@@ -1,0 +1,12 @@
+#!/usr/bin/env ansible-playbook
+---
+
+
+ - name: Delete Database(s)
+   hosts: "{{ hostgroup }}"
+   #user: ansible
+   become: yes
+   become_user: oracle
+   roles:
+      - oradb-delete
+

@@ -1,0 +1,83 @@
+---
+
+- name: prepare installation
+  hosts: {{ ip_list }}
+  vars:
+    yum_baseurl: "{{ bocloud_ansible.packages_yum_baseurl }}"
+    backup_repo: True
+    restory_repo: False
+  roles:
+    - role: bocloud_common
+
+- name: configure redis server
+  hosts: {% if args.cluster_install %}redis_master,redis_slave{% else %}{{ ip_list }}{% endif %}
+  roles:
+    - role: ansible-redis
+      redis_version: {{ args.version }}
+      yum_baseurl: "{{ bocloud_ansible.packages_yum_baseurl }}"
+      cluster_install: {{ args.cluster_install }}
+      redis_assigned_slots: {{ args.cluster_install }}
+      {%- if args.manage_config.redis_password is defined %}
+      redis_password: {{ args.manage_config.redis_password }}
+      {%- endif %}
+      redis_tarball: {{ bocloud_ansible.packages_path }}/redis/redis-{{ args.version }}.tar.gz
+      {%- if args.software_config is defined %}
+        {%- for key, value in args.software_config.items() %}
+          {%- if value is string %}
+            {%- if value == "" %}
+      {{ key }}: '""'
+            {%- else %}
+      {{ key }}: "{{ value }}"
+            {%- endif %}
+          {%- else %}
+      {{ key }}: {{ value }}
+          {%- endif %}
+        {%- endfor %}
+      {%- endif %}
+
+{% if args.manage_config.sentinel_install %}
+- name: configure redis sentinel
+  hosts: redis_sentinel
+  vars:
+    - redis_sentinel_settings:
+        port: {{ args.software_config.redis_port }}
+        quorum: {{ args.software_config.redis_sentinel_quorum }}
+        {%- if args.manage_config.redis_password is defined %}
+        auth_pass: {{ args.manage_config.redis_password }}
+        {%- endif %}
+        down_after_milliseconds: {{ args.software_config.redis_sentinel_down_after_milliseconds }}
+        parallel_syncs: {{ args.software_config.redis_sentinel_parallel_syncs }}
+        failover_timeout: {{ args.software_config.redis_sentinel_failover_timeout }}
+        notification_script: {{ args.software_config.redis_sentinel_notification_script }}
+        client_reconfig_script: {{ args.software_config.redis_sentinel_client_reconfig_script }}
+  roles:
+    - role: ansible-redis
+      redis_version: {{ args.version }}
+      # redis_sentinel: true
+      {%- if args.manage_config.redis_password is defined %}
+      redis_password: {{ args.manage_config.redis_password }}
+      {%- endif %}
+      redis_tarball: {{ bocloud_ansible.packages_path }}/redis/redis-{{ args.version }}.tar.gz
+      {%- if args.software_config is defined %}
+        {%- for key, value in args.software_config.items() %}
+          {%- if value is string %}
+            {%- if value == "" %}
+      {{ key }}: '""'
+            {%- else %}
+      {{ key }}: "{{ value }}"
+            {%- endif %}
+          {%- else %}
+      {{ key }}: {{ value }}
+          {%- endif %}
+        {%- endfor %}
+      {%- endif %}
+{% endif %}
+
+- name: restory original environment
+  hosts: {{ ip_list }}
+  vars:
+    backup_repo: False
+    restory_repo: True
+    configure_bocloud_repo: False
+  roles:
+    - role: bocloud_common

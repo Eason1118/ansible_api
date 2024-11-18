@@ -1,0 +1,2 @@
+CONFIG_FILE=/etc/prometheus-openstack-exporter/prometheus-openstack-exporter.yaml
+NOVARC=/etc/prometheus-openstack-exporter/admin-novarc

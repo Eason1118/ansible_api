@@ -1,0 +1,7 @@
+---
+- hosts: all
+  #become: yes
+  roles:
+    - ansible-role-vmwaretools
+  vars:
+    - packages_dir: /var/www/html

@@ -1,0 +1,10 @@
+---
+
+- name: show user sudoer infomation - {{ '{{ item }}' }}
+  script: ../../roles/ansible-manage-user/scripts/list_remove_sudoers.sh "{{ item }}"
+  with_items:
+    - "{{ sudoer_info.name }}"
+  register: bocloud_worker_msg
+
+- debug:
+    var: bocloud_worker_msg

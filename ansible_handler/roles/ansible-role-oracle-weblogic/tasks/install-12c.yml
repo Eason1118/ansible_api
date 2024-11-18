@@ -1,0 +1,25 @@
+---
+#
+- name: prepare installation response file
+  become: yes
+  become_user: "{{ oracle_weblogic_user }}"
+  template:
+    src: install-wls-12c.rsp.j2
+    dest: "{{ oracle_weblogic_response_file }}"
+  when: not oracle_weblogic_quick_installation
+
+- set_fact:
+    oracle_weblogic_install_command: "java -jar {{ oracle_weblogic_jar }} ORACLE_HOME={{ oracle_weblogic_oracle_home }} >> /tmp/weblogic-installation.log"
+  when: oracle_weblogic_quick_installation
+
+- set_fact:
+    oracle_weblogic_install_command: "java -jar {{ oracle_weblogic_jar }} -silent -responseFile {{ oracle_weblogic_response_file }} >> /tmp/weblogic-installation.log"
+  when: not oracle_weblogic_quick_installation
+
+- name: install weblogic
+  become: yes
+  become_user: "{{ oracle_weblogic_user }}"
+  shell: "{{ oracle_weblogic_install_command }}"
+  args:
+    creates: "{{ oracle_weblogic_oracle_home }}/oraInst.loc"
+    executable: /bin/bash

@@ -1,0 +1,12 @@
+---
+
+- hosts: {{ ip_list }}
+
+  vars:
+    tomcat_version: {{ args.version }}
+    tomcat_packages_name: apache-tomcat-{{ args.version }}-windows-x64.zip
+    tomcat_packages_dir: {{ bocloud_ansible.packages_path }}/tomcat
+    tomcat_major_version: tomcat_packages_name.split('-w')[0]
+
+  roles:
+    - role: ansible-windows-tomcat

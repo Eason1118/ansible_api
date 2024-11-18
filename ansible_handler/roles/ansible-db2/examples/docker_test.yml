@@ -1,0 +1,69 @@
+---
+# This is to test on Docker
+  - hosts: all
+    gather_facts: True
+    pre_tasks:
+
+      - name: Create /DB2 directory
+        file: 
+          path: /db2
+          state: directory
+          mode: 0755
+        tags: users
+
+    roles:
+      - db2
+    vars:
+       # Define the db2_binary and setup the URL to download.
+       # Variable location define where should put db2 on ansible machine
+       # Variable dest define where should decompress DB2 on remote host
+      db2_binary:
+        location: "/tmp/db2.tar.gz"
+        dest: "/tmp"
+
+      databases:
+        - name: jts
+          instance: db2inst1
+          codeset: "UTF-8"
+          territory: "en"
+          pagesize: "16384"
+        - name: ccm
+          instance: db2inst2
+          codeset: "UTF-8"
+          path: /db2
+          territory: "en"
+          pagesize: "16384"
+
+      db2_instances:
+        - instance: "DB2INST"
+          name: "db2inst1"
+          group_name: "db2iadm1"
+          fenced_username: "db2fenc1"
+          fenced_group_name: "db2fadm1"
+          options:
+            autostart: "YES"
+            start_during_install: "YES"
+          dbm_params:
+            intra_parallel: "YES"
+            numdb: "15"
+
+        - instance: "DB2INST2"
+          name: "db2inst2"
+          group_name: "db2iadm2"
+          fenced_username: "db2fenc2"
+          fenced_group_name: "db2fadm2"
+          home_directory: "/db2/db2inst2"
+          fenced_home_directory: "/db2/db2fenc2"
+          dbm_params:
+            intra_parallel: "NO"
+            numdb: "25"
+
+        - instance: "DB2INST3"
+          name: "db2inst3"
+          group_name: "db2iadm3"
+          fenced_username: "db2fenc3"
+          fenced_group_name: "db2fadm3"
+          uid: 901
+          gid: 902
+          fenced_uid: 801
+          fenced_gid: 802

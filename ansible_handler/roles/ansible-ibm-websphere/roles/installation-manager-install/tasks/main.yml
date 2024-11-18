@@ -1,0 +1,17 @@
+---
+#- include_tasks: check_vars.yml
+
+- name:          Install pre-requisites
+  yum:           name={{item}} state=present
+  with_items:
+    - unzip
+    - tar
+    - wget
+  when:          (ansible_distribution == "RedHat") or (ansible_distribution == "CentOS")
+
+- name:          Define Vars
+  include_tasks: define_vars.yml
+
+- name:          Install IBM Installation Manager
+  include_tasks: install_iim.yml
+  when:          version_already_installed.rc != 0

@@ -1,0 +1,66 @@
+---
+
+- name: prepare installation
+  hosts: {{ ip_list }}
+  vars:
+    yum_baseurl: "{{ bocloud_ansible.packages_yum_baseurl }}"
+    backup_repo: True
+    restory_repo: False
+  roles:
+    - role: bocloud_common
+
+- name: install mysql
+  hosts: {% if args.cluster_install is defined and args.cluster_install %}mysql_master,mysql_slave{% else %}{{ ip_list }}{% endif %}
+  become: yes
+  vars:
+  {%- if args.software_config is defined %}
+    {%- for key, value in args.software_config.items() %}
+      {%- if value is string %}
+    {{ key }}: "{{ value }}"
+      {%- else %}
+    {{ key }}: {{ value }}
+      {%- endif %}
+    {%- endfor %}
+    {%- if args.software_config.mysql_username == 'root' %}
+    mysql_root_home: {{ args.software_config.mysql_userhome }}
+    mysql_root_username: {{ args.software_config.mysql_username }}
+    mysql_root_password: {{ args.software_config.mysql_password }}
+    {%- else %}
+    mysql_user_home: {{ args.software_config.mysql_userhome }}
+    mysql_user_name: {{ args.software_config.mysql_username }}
+    mysql_user_password: {{ args.software_config.mysql_password }}
+    {%- endif %}
+  {%- endif %}
+  {%- if args.mysql_users is defined %}
+    mysql_users:
+    {%- for user in args.mysql_users %}
+      - {{ user }}
+    {%- endfor %}
+  {%- endif %}
+  {%- if args.mysql_databases is defined %}
+    mysql_databases:
+    {%- for db in args.mysql_databases %}
+      - {{ db }}
+    {%- endfor %}
+  {%- endif %}
+  {%- if args.mysql_packages is defined %}
+    mysql_packages:
+    {%- for package in args.mysql_packages %}
+      - {{ package }}
+    {%- endfor %}
+  {%- endif %}
+  {%- if args.mysql_replication_user is defined %}
+    mysql_replication_user: {{ args.mysql_replication_user }}
+    mysql_replication_master: "{{ '{{ groups.mysql_master[0] }}' }}"
+  {%- endif %}
+  roles:
+    - role: ansible-role-mysql
+
+- name: restory original environment
+  hosts: {{ ip_list }}
+  vars:
+    backup_repo: False
+    restory_repo: True
+    configure_bocloud_repo: False
+  roles:
+    - role: bocloud_common

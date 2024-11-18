@@ -1,0 +1,20 @@
+# {{ ansible_managed }}
+
+[Unit]
+Description=etcd Daemon
+After=network.target
+
+[Service]
+Type=notify
+User={{ etcd_user }}
+WorkingDirectory={{etcd_data_dir}}/
+EnvironmentFile=-{{etcd_conf_file}}
+# set GOMAXPROCS to number of processors
+ExecStart=/bin/bash -c "GOMAXPROCS=$(nproc) {{etcd_cmd}}"
+Restart=on-failure
+RestartSec=10s
+LimitNOFILE=65536
+TimeoutStartSec=0
+
+[Install]
+WantedBy=multi-user.target

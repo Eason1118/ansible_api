@@ -1,0 +1,63 @@
+---
+# tasks file for vmwaretools/Ubuntu
+
+- name: Check if the vmware-tools-esx-nox is not installed already
+  command: /usr/bin/dpkg -l vmware-tools-esx-nox
+  changed_when: false
+  register: dpkg_result
+  ignore_errors: true
+
+- name: Check vmware-tools directory exists
+  local_action: stat path={{ packages_dir }}/vmwaretools/ubuntu/dists/{{ ansible_distribution_release }}/main/
+  register: result
+  failed_when: not result.stat.exists
+
+- name: Download vmware-tools file for x86_64/amd64 to /tmp
+  copy:
+    src: "{{ lookup('pipe', 'ls {{ packages_dir }}/vmwaretools/ubuntu/dists/{{ ansible_distribution_release }}/main/binary-x86_64/*.deb') }}"
+    dest: /tmp/vmware-tools-esx-nox.deb
+  when: ansible_architecture == 'x86_64' and ansible_distribution_release in [ 'lucid', 'natty', 'oneiric', 'precise' ] and dpkg_result.stdout.find('no packages found') == -1
+
+- name: Download vmware-tools file for i386 to /tmp
+  copy:
+    src: "{{ lookup('pipe', 'ls {{ packages_dir }}/vmwaretools/ubuntu/dists/{{ ansible_distribution_release }}/main/binary-i386/*.deb') }}"
+    dest: /tmp/vmware-tools-esx-nox.deb
+  when: ansible_architecture == 'i386' and ansible_distribution_release in [ 'lucid', 'natty', 'oneiric', 'precise' ] and dpkg_result.stdout.find('no packages found') == -1
+
+- name: Download vmware-tools file for x86_64/amd64 to /tmp for non 'lucid', 'natty', 'oneiric', 'precise' Ubuntu systems
+  copy:
+    src: "{{ lookup('pipe', 'ls {{ packages_dir }}/vmwaretools/ubuntu/dists/{{ ansible_distribution_release }}/main/binary-amd64/*.deb') }}"
+    dest: /tmp/open-vm-tools.deb
+  when: ansible_architecture == 'x86_64' and not ansible_distribution_release in [ 'lucid', 'natty', 'oneiric', 'precise' ] and dpkg_result.stdout.find('no packages found') == -1
+
+- name: Download vmware-tools file for i386 to /tmp for non 'lucid', 'natty', 'oneiric', 'precise' Ubuntu systems
+  copy:
+    src: "{{ lookup('pipe', 'ls {{ packages_dir }}/vmwaretools/ubuntu/dists/{{ ansible_distribution_release }}/main/binary-i386/*.deb') }}"
+    dest: /tmp/open-vm-tools.deb
+  when: ansible_architecture == 'i386' and not ansible_distribution_release in [ 'lucid', 'natty', 'oneiric', 'precise' ] and dpkg_result.stdout.find('no packages found') == -1
+
+- name: Remove the open-vm-tools if they are installed not to block vmware-tools installation
+  apt:
+    name: open-vm-tools
+    state: absent
+  when: ansible_distribution_release in [ 'lucid', 'natty', 'oneiric', 'precise' ] and dpkg_result.stdout.find('no packages found') == -1
+
+- name: Install vmware-tools
+  apt:
+    deb: /tmp/vmware-tools-esx-nox.deb
+  when: ansible_distribution_release in [ 'lucid', 'natty', 'oneiric', 'precise' ] and dpkg_result.stdout.find('no packages found') == -1
+
+- name: Installing Open VMware Tools (open-vm-tools) for non 'lucid', 'natty', 'oneiric', 'precise' Ubuntu systems
+  apt:
+    deb: /tmp/open-vm-tools.deb
+  when: not ansible_distribution_release in [ 'lucid', 'natty', 'oneiric', 'precise' ]
+
+- name: Delete vmware-tools repository file from /tmp
+  file:
+    path: /tmp/{{ item }}.deb
+    state: absent
+  with_items:
+    - vmware-tools-esx-nox
+    - open-vm-tools
+  ignore_errors: true
+

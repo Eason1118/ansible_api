@@ -1,0 +1,32 @@
+---
+
+- hosts: {{ ip_list }}
+  gather_facts: true
+  tasks:
+    - name: "control linux service {{ args.name }}"
+      service:
+        name: "{{ args.name }}"
+        {% if args.enabled is defined -%}
+        enabled: {{ args.enabled }}
+        {% endif -%}
+        {% if args.arguments is defined -%}
+        args: {{ args.arguments }}
+        {% endif -%}
+        {% if args.state is defined -%}
+        state: {{ args.state }}
+        {% endif %}
+      when: ansible_os_family != "Windows"
+
+    - name: "control Windows service {{ args.name }}"
+      win_service:
+        name: "{{ args.name }}"
+        {% if args.start_mode is defined -%}
+        start_mode: {{ args.start_mode }}
+        {% endif -%}
+        {% if args.arguments is defined -%}
+        args: {{ args.arguments }}
+        {% endif -%}
+        {% if args.state is defined -%}
+        state: {{ args.state }}
+        {% endif %}
+      when: ansible_os_family == "Windows"

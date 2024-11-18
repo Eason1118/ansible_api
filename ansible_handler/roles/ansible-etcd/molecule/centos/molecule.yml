@@ -1,0 +1,51 @@
+---
+dependency:
+  name: galaxy
+driver:
+  name: docker
+lint:
+  name: yamllint
+platforms:
+  - name: etcd-01
+    image: retr0h/centos7-systemd-ansible:latest
+    capabilities:
+      - SYS_ADMIN
+    volumes:
+      - /sys/fs/cgroup:/sys/fs/cgroup:ro
+    command: /usr/sbin/init
+    groups:
+      - etcd
+  - name: etcd-02
+    image: retr0h/centos7-systemd-ansible:latest
+    capabilities:
+      - SYS_ADMIN
+    volumes:
+      - /sys/fs/cgroup:/sys/fs/cgroup:ro
+    command: /usr/sbin/init
+    groups:
+      - etcd
+  - name: etcd-03
+    image: retr0h/centos7-systemd-ansible:latest
+    capabilities:
+      - SYS_ADMIN
+    volumes:
+      - /sys/fs/cgroup:/sys/fs/cgroup:ro
+    command: /usr/sbin/init
+    groups:
+      - etcd
+provisioner:
+  name: ansible
+  playbooks:
+    prepare: ../resources/playbooks/prepare.yml
+    create: ../resources/playbooks/create.yml
+    destroy: ../resources/playbooks/destroy.yml
+    converge: ../resources/playbooks/playbook.yml
+  lint:
+    name: ansible-lint
+scenario:
+  name: centos
+verifier:
+  name: testinfra
+  directory: ../resources/tests/
+  lint:
+    name: flake8

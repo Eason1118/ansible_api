@@ -1,0 +1,42 @@
+---
+
+- hosts: {{ ip_list }}
+  {%- if args.type == "view" %}
+  gather_facts: false
+  tasks:
+    - name: show user sudoer infomation - {{ args.sudo.name }}
+      script: ../../roles/ansible-manage-user/scripts/list_remove_sudoers.sh {{ args.sudo.name }}
+      register: bocloud_worker_msg
+  {%- else %}
+  gather_facts: true
+  vars:
+    operate_type: {{ args.type }}
+    {%- if args.users is defined %}
+    user_info: {{ args.users[0] }}
+    {%- endif %}
+    {%- if args.sudo is defined %}
+    sudoer_info: {{ args.sudo }}
+    {%- endif %}
+    {%- if args.type == "delete" %}
+    sudoer_remove_special_specs: true
+    {%- endif %}
+    {%- if args.sudo is defined %}
+    sudoer_specs:
+      - name: "{{ args.sudo.name }}_ansible"
+        {%- if args.sudo.comment is defined %}
+        comment: "{{ args.sudo.comment }}"
+        {%- endif %}
+        users: "{{ args.sudo.name }}"
+        hosts: {{ args.sudo.hosts|default('ALL') }}
+        operators: {{ args.sudo.operators|default('ALL') }}
+        tags: {{ args.sudo.tags|default('NOPASSWD') }}
+        commands: {{ args.sudo.commands|default('ALL') }}
+        {%- if args.sudo.defaults is defined %}
+        defaults:
+          - {{ args.sudo.defaults }}
+        {%- endif %}
+    {%- endif %}
+
+  roles:
+    - role: ansible-manage-user
+  {%- endif %}

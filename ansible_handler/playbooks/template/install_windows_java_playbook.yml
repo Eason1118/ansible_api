@@ -1,0 +1,19 @@
+---
+
+- hosts: {{ ip_list }}
+
+  vars:
+    java_version: {{ args.version.split('u')[0] }}
+    java_subversion: {{ args.version.split('u')[1] }}
+    java_packages_name: jdk-{{ args.version }}-windows-x64.exe
+    java_packages_dir: {{ bocloud_ansible.packages_path }}/oracle_java/{{ args.version }}
+    java_download_from_oracle: False
+    {%- if args.set_java_home is defined %}
+    java_set_javahome: {{ args.set_java_home }}
+    {%- endif %}
+    {%- if args.install_jce is defined %}
+    java_install_jce: {{ args.install_jce }}
+    {%- endif %}
+
+  roles:
+    - role: ansible-windows-java

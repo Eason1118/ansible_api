@@ -1,0 +1,70 @@
+---
+# Installation Variables
+etcd_config_only: false
+etcd_daemon: "systemctl"
+
+# Download Variables
+etcd_version: 3.1.0
+etcd_checksum: 60c47c25e79668adf435b035a374e58f7c035b4a75d5bb6259eb1a806c826487.
+etcd_platform: linux
+etcd_arch: amd64
+etcd_release: "etcd-{{ etcd_version }}-{{ etcd_platform }}-{{ etcd_arch }}"
+etcd_download_url: "https://github.com/coreos/etcd/releases/download/{{ etcd_version }}/{{ etcd_release }}.tar.gz"
+etcd_download_dir: /usr/local/src
+etcd_download_filename: "{{ etcd_release }}.tar.gz"
+
+# Runtime Variables
+etcd_group: etcd
+etcd_user: etcd
+etcd_home: /var/lib/etcd
+#etcd_user: root  # The user only applies to EL distros
+etcd_conf_dir: /etc/etcd
+etcd_conf_file: "{{ etcd_conf_dir }}/etcd.conf"
+etcd_dir: /usr/local/sbin
+etcd_data_dir: "{{ etcd_home }}/default.etcd"
+etcd_cmd: "{{ etcd_dir }}/etcd"
+
+# Networking Variables
+etcd_interface: lo
+etcd_client_interface: "{{ etcd_interface }}"
+etcd_peer_interface: "{{ etcd_interface }}"
+etcd_client_port: 2379
+etcd_peer_port: 2380
+etcd_peers_group: etcd
+etcd_url_scheme: http
+etcd_client_url_scheme: "{{ etcd_url_scheme }}"
+etcd_peer_url_scheme: "{{ etcd_url_scheme }}"
+
+etcd_cluster_install: yes
+etcd_initial_cluster_state: new
+etcd_initial_cluster_token: etcd-cluster-1
+
+#etcd_initial_advertise_peer_urls: "{{ etcd_peer_url_scheme }}://{{ hostvars[inventory_hostname]['ansible_' + etcd_peer_interface]['ipv4']['address'] }}:{{ etcd_peer_port }}"
+#etcd_listen_peer_urls: "{{ etcd_peer_url_scheme }}://{{ hostvars[inventory_hostname]['ansible_' + etcd_peer_interface]['ipv4']['address'] }}:{{ etcd_peer_port }}"
+#etcd_advertise_client_urls: "{{ etcd_client_url_scheme }}://{{ hostvars[inventory_hostname]['ansible_' + etcd_client_interface]['ipv4']['address'] }}:{{ etcd_client_port }}"
+#etcd_listen_client_urls: "{{ etcd_client_url_scheme }}://{{ hostvars[inventory_hostname]['ansible_' + etcd_client_interface]['ipv4']['address'] }}:{{ etcd_client_port }}"
+etcd_initial_advertise_peer_urls: "{{ etcd_peer_url_scheme }}://{{ inventory_hostname }}:{{ etcd_peer_port }}"
+etcd_listen_peer_urls: "{{ etcd_peer_url_scheme }}://{{ inventory_hostname }}:{{ etcd_peer_port }}"
+etcd_advertise_client_urls: "{{ etcd_client_url_scheme }}://{{ inventory_hostname }}:{{ etcd_client_port }}"
+etcd_listen_client_urls: "{{ etcd_client_url_scheme }}://{{ inventory_hostname }}:{{ etcd_client_port }},{{ etcd_client_url_scheme }}://127.0.0.1:{{ etcd_client_port }}"
+
+etcd_secure: no
+etcd_certs_dir: "{{ etcd_conf_dir }}/ssl"
+etcd_cert_group: root
+etcd_ca_file: "{{ etcd_certs_dir }}/ca.pem"
+etcd_cert_file: "{{ etcd_certs_dir }}/server.pem"
+etcd_key_file: "{{ etcd_certs_dir }}/server-key.pem"
+etcd_peer_ca_file: "{{ etcd_certs_dir }}/ca.pem"
+etcd_peer_cert_file: "{{ etcd_certs_dir }}/server.pem"
+etcd_peer_key_file: "{{ etcd_certs_dir }}/server-key.pem"
+etcd_client_cert_file: "{{ etcd_certs_dir }}/server.pem"
+etcd_client_key_file: "{{ etcd_certs_dir }}/server-key.pem"
+
+etcd_client_cert_auth: false
+etcd_client_trusted_ca_file: "{{ etcd_ca_file }}"
+
+etcd_peer_client_cert_auth: false
+etcd_peer_trusted_ca_file: "{{ etcd_peer_ca_file }}"
+
+etcd_discovery: ~
+etcd_discovery_srv: ~

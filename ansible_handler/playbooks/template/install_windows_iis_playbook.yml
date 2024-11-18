@@ -1,0 +1,9 @@
+---
+
+- hosts: {{ ip_list }}
+
+  vars:
+    iis_bool: {{ args.bool }}
+
+  roles:
+    - role: ansible-windows-iis

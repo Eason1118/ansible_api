@@ -1,0 +1,3 @@
+{% for key, value in novarc.items() %}
+export {{ key }}={{ value }}
+{% endfor %}

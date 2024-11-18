@@ -1,0 +1,42 @@
+---
+
+- name: check whether or not the user existed
+  win_user: 
+    name: "{{ item }}"
+    state: query
+  with_items: "{{ user_info.name }}"
+  register: user_state
+
+- debug:
+    msg: "用户已经存在！"
+  failed_when: user_state["results"][0].state != "absent"
+  when: user_state["results"][0].state != "absent"
+
+- name: Add the new user for windows
+  win_user:
+    name: "{{ user_info.name }}"
+    state: present
+    groups:
+      - Users
+
+- name: Update the new user comment
+  win_user: 
+    name: "{{ user_info.name }}"
+    state: present
+    description: "{{ user_info.comment }}"
+  when: user_info.comment is defined
+
+- name: Update the new user password
+  win_user: 
+    name: "{{ user_info.name }}"
+    state: present
+    password: "{{ user_info.password }}"
+  when: user_info.password is defined
+
+- name: Update the new user groups
+  win_user: 
+    name: "{{ user_info.name }}"
+    state: present
+    groups: "{{ user_info.group }}"
+    groups_action: replace
+  when: user_info.group is defined

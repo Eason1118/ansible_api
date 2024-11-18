@@ -1,0 +1,22 @@
+{%- if args.type|upper() != 'PLAYBOOK' %}
+---
+
+- hosts: {{ ip_list }}
+  gather_facts: false
+  tasks:
+    {%- if args.type|upper() == 'BAT' or  args.type|upper() == 'POWERSHELL' %}
+    - name: operate the script with win_shell ansible module
+      win_shell: |
+        {{ args.content }}
+    {%- else %}
+    - name: operate {{ args.type }} script by ansible script module
+      {%- if args.params is defined %}
+      script: {{ args.source }} {{ args.params }}
+      {% else %}
+      script: {{ args.source }}
+      {% endif %}
+    {% endif %}
+      register: bocloud_script_msg
+{% else %}
+{{ args.content }}
+{% endif %}

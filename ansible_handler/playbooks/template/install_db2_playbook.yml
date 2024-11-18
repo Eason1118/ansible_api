@@ -1,0 +1,43 @@
+---
+
+- name: prepare installation
+  hosts: {{ ip_list }}
+  vars:
+    yum_baseurl: "{{ bocloud_ansible.packages_yum_baseurl }}"
+    backup_repo: True
+    restory_repo: False
+  roles:
+    - role: bocloud_common
+
+- hosts: {{ ip_list }}
+  vars:
+    db2_version: "{{ args.version }}"
+    db2_creates: server
+    db2_unarchive: server_t
+    db2_install_packages: "{{ args.version }}_linuxx64_server_t.tar.gz"
+
+    db2_tmp_dest: "/tmp"
+
+    {%- if args.software_config is defined %}
+    {%- for key, value in args.software_config.items() %}
+    {{ key }}: {{ value }}
+    {%- endfor %}
+    {%- endif %}
+    db2_binary:
+      location: "{{ bocloud_ansible.packages_path }}/db2/{{ args.version }}_linuxx64_server_t.tar.gz"
+      dest: "/tmp"
+
+    {%- if args.software_config is defined %}
+    db2_instances:
+      - instance: "{{ args.software_config.db2_instance }}" # "DB2INST"
+        name: "{{ args.software_config.db2_name }}" # "db2inst1"
+        group_name: "{{ args.software_config.db2_group_name }}" # "db2iadm1"
+        fenced_username: "{{ args.software_config.db2_fenced_username }}" # "db2fenc1"
+        fenced_group_name: "{{ args.software_config.db2_fenced_group_name }}" #"db2fadm1"
+    {%- endif %}
+
+
+  roles:
+    - role: ansible-db2
+
+

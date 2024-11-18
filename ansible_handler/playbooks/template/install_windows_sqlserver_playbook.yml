@@ -1,0 +1,13 @@
+---
+
+- hosts: {{ ip_list }}
+
+  vars:
+    sqlserver_version: {{ args.version.split('-')[-1] }}
+    sqlserver_name: SQLServer{{ args.version.split('-')[-1] }}-x64-CHS-Dev.zip
+    sqlserver_packages_dir: {{ bocloud_ansible.packages_path }}/sqlserver/{{ args.version.split('-')[-1] }}
+    sqlserver_task_name: {{ args.task_name }}
+    sqlserver_bat: SQLServer{{ args.version.split('-')[-1] }}-x64-CHS-Dev.bat
+
+  roles:
+    - role: ansible-windows-sqlserver

@@ -1,0 +1,32 @@
+---
+#In this example we are creating a custom instance 
+  - hosts: all
+    gather_facts: True
+    pre_tasks:
+      # This is required to test on RedHat (No license on vagrant)
+      - name: Installing OL Public repository
+        get_url: 
+          url: "{{yum_repo}}"
+          dest: /etc/yum.repos.d/public-yum-release.repo
+        tags: download
+    roles:
+      - db2
+    vars:
+      # Use databases hash to add databases to an instance
+      databases:
+         # The minimum information required it the database name and the instance name
+         - name: autodb
+           instance: db2inst1
+         - name: otherdb
+           instance: db2inst1
+           automatic: "no"
+
+         # codeset and territory must be used together
+         # All possible customizations
+#         - name: customdb
+#           instance: db2inst2
+#           automatic: "yes" # BOOLEAN # .-AUTOMATIC STORAGE--YES-. '-AUTOMATIC STORAGE--NO--'
+#           path: /db2 # Directory of db. Can be a comma separeted list of directories if using automatic storage.
+#           codeset: "UTF-8" # '-USING CODESET--codeset--TERRITORY--territory-'
+#           territory: "en"
+#           pagesize: "4096" # PAGESIZE INTEGER

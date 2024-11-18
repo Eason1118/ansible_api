@@ -1,0 +1,9 @@
+---
+
+
+  - name: install iis
+    win_feature:
+      name: 
+      - Web-Server
+      - Web-Common-Http
+      state: present

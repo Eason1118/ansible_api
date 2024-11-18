@@ -1,0 +1,40 @@
+---
+
+- name: prepare installation
+  hosts: {{ ip_list }}
+  vars:
+    yum_baseurl: "{{ bocloud_ansible.packages_yum_baseurl }}"
+    backup_repo: True
+    restory_repo: False
+  roles:
+    - role: bocloud_common
+
+- name: install mongoDB
+  hosts: {{ ip_list }}
+  vars:
+    mongodb_version: "{{ args.version }}"
+    yum_baseurl: "{{ bocloud_ansible.packages_yum_baseurl }}"
+    {%- if args.software_config is defined %}
+    {%- for key, value in args.software_config.items() %}
+    {{ key }}: {{ value }}
+    {%- endfor %}
+    {%- endif %}
+    {%- if args.manage_config is defined %}
+    {%- for key, value in args.manage_config.items() %}
+    {{ key }}: {{ value }}
+    {%- endfor %}
+    {%- endif %}
+    {%- if args.mongodb_users is defined %}
+    mongodb_users: {{ args.mongodb_users }}
+    {%- endif %}
+  roles:
+    - role: ansible-role-mongodb
+
+- name: restory original environment
+  hosts: {{ ip_list }}
+  vars:
+    backup_repo: False
+    restory_repo: True
+    configure_bocloud_repo: False
+  roles:
+    - role: bocloud_common

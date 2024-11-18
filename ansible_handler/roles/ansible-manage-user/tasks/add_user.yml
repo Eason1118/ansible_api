@@ -1,0 +1,60 @@
+---
+
+# if the user didn't exist, will create the new user
+- name: check whether or not the user existed
+  shell: grep "^{{ item }}:" /etc/passwd |wc -l
+  with_items: "{{ user_info.name }}"
+  register: checkedexist 
+
+- debug:
+    msg: "用户已经存在！"
+  failed_when: checkedexist["results"][0].stdout != "0"
+  when: checkedexist["results"][0].stdout != "0"
+
+- name: Ensure the group name existed
+  group:
+    name: "{{ user_info.group }}"
+    state: present
+  when: user_info.group is defined
+
+- name: Add the new user and assigned him/her to a new group
+  user:
+    name: "{{ user_info.name }}"
+    state: present
+    group: "{{ user_info.group }}" 
+  when: user_info.group is defined
+
+- name: Only add the new user for linux
+  user:
+    name: "{{ user_info.name }}"
+    state: present
+  when: user_info.group is not defined
+
+- name: Update the new user comment
+  user: 
+    name: "{{ user_info.name }}"
+    state: present
+    comment: "{{ user_info.comment }}"
+  when: user_info.comment is defined
+
+- name: Update the new user password
+  user: 
+    name: "{{ user_info.name }}"
+    state: present
+    password: "{{ user_info.crypted_password }}"
+  when: user_info.crypted_password is defined
+
+- name: Update the new user expires
+  user: 
+    name: "{{ user_info.name }}"
+    state: present
+    expires: "{{ user_info.expires }}"
+  when: user_info.expires is defined
+
+- name: Update the new user shell
+  user: 
+    name: "{{ user_info.name }}"
+    state: present
+    shell: "{{ user_info.shell }}"
+  when: user_info.shell is defined
+

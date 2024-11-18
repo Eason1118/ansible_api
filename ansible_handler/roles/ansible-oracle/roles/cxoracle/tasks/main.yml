@@ -1,0 +1,12 @@
+# cxoracle-install playbook
+---
+- name: Install cx_oracle
+  pip:
+     name="{{ yum_baseurl }}/pip_packages/cx_Oracle-7.1.1-cp27-cp27mu-manylinux1_x86_64.whl"
+     extra_args="{{ extra_args }}"
+     umask={{ cx_oracle_umask | default (omit)}}
+     state=present
+  #with_items: "{{oracle_databases}}"
+  when: install_cx_oracle
+  tags: cx_oracle
+  #environment: "{{oracle_env}}"

@@ -1,0 +1,11 @@
+---
+
+- hosts: {{ ip_list }}
+  gather_facts: false
+  tasks:
+    - name: backup file/directory to dest
+      bocloud_backup:
+        dest: {{ bocloud_worker.nfs_path }}/{{ args.dest }}
+        src: {{ args.src }}
+        nfs_path: {{ bocloud_worker.nfs_path }}
+      register: bocloud_backup_msg

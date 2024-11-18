@@ -1,0 +1,115 @@
+---
+# install_db: INSTALL_DB_SWONLY
+# oracle_hostname: '{{ server_hostname }}'
+# inventory_os_group: '{{ oracle_install_group }}'
+# inventory_location: '{{ oracle_base }}/inventory/'
+
+## 默认安装配置 install_config
+oracle_install_version: "12102"
+oracle_user: "oracle"
+oracle_os_user_pass: '$6$P7jw3OaWKdR$tRSRPjTey'
+oracle_install_group: "oinstall"
+oracle_base: "/oracle/app"
+
+installation_folder: '/tmp/installation'
+
+server_hostname: '{{ ansible_fqdn }}'
+extra_groups:
+   - dba
+   - oper
+## 默认oracle配置 oracle_config
+
+dbhome_name: "dbhome_1"
+oracle_edition: "EE"
+oracle_dba_group: "dba"
+oracle_oper_group: "oper"
+oracle_database_type: "GENERAL_PURPOSE"
+oracle_globalname: "orcl.oradb3.private"
+oracle_sid: "orcl"
+create_container_database: "true"
+number_of_pdbs: "1"
+oracle_conf_as_container_db: "true"
+pdb_prefix: "db"
+oracle_pdb_name: "db01"
+oracle_charset: "AL32UTF8"
+oracle_memory_option: "false"
+oracle_memory_mb: 1536
+oracle_install_samples: "true"
+oracle_management_option: "DEFAULT"
+oracle_enable_recovery: "true"
+oracle_storage_type: "FILE_SYSTEM_STORAGE"
+oracle_dataloc: "{{ oracle_base }}/oradata"
+oracle_recoveryloc: "{{ oracle_base }}/recovery_area"
+oracle_decline_security_updates: "True"
+hugepages_nr: 578
+oracle_pass_all_users: "oracle"
+install_db: INSTALL_DB_SWONLY
+oracle_hostname: '{{ server_hostname }}'
+inventory_os_group: '{{ oracle_install_group }}'
+inventory_location: '{{ oracle_base }}/inventory/'
+oracle_home: '{{ oracle_base }}/{{ oracle_user }}/product/{{ oracle_install_version }}/{{ dbhome_name }}'
+
+packages_list:
+   - man
+   - wget
+   - unzip
+   - unixODBC
+   - unixODBC-devel
+   - unixODBC-devel*x86_64
+   - unixODBC-*x86_64
+   - compat-libstdc++-33
+   - compat-libstdc++-296
+   - compat-libstdc*x86_64
+   - compat-libcap*
+   - compat-glibc-2*
+   - elfutils-devel*x86_64
+   - glibc-*
+   - gcc-c++*x86_64
+   - libaio
+   - libaio-devel
+   - libaio-devel*x86_64
+   - libtool-ltdl*x86_64
+   - readline
+   - libcap*x86_64
+   - libattr*x86_64
+   - sysstat
+  # - pdksh # skip this because it's bad and we're getting ksh already
+   - ksh
+kernel_params:
+# Shared memory and semaphore
+# look for document 226209.1 in oracle support for details
+  kernel.sem: 250 32000 100 128
+  kernel.shmmni: 4096
+# 1.5 GB Shared memory 500mb for linux kernel (for 2GB virtual machine)
+  kernel.shmall: 393216
+# 1 GB Half of the physical memory (for 2GB virtual machine)
+  kernel.shmmax: 4398046511104
+# For 1Gbps with 1ms latency 16MB buffer
+  net.core.rmem_max: 16777216
+  net.core.wmem_max: 16777216
+  net.ipv4.tcp_rmem: 4096 87380 16777216
+  net.ipv4.tcp_wmem: 4096 65536 16777216
+# Minimize swap file use
+  vm.swappiness: 10
+  vm.dirty_background_ratio: 5
+  vm.dirty_ratio: 10
+# Max open file descriptors 512 * db processes + room for os
+  fs.file-max: 409600
+# Shorten keep alive of connections
+  net.ipv4.tcp_keepalive_time: 300
+  net.ipv4.tcp_keepalive_intvl: 60
+  net.ipv4.tcp_keepalive_probes: 10
+# maximize port range
+  net.ipv4.ip_local_port_range: 9000 65500
+
+# Oracle user limits
+soft_no_file: 4096
+hard_no_file: 65536
+soft_nproc: 2047
+hard_nproc: 16384
+soft_stack: 10240
+hard_stack: 32768
+# mem lock 90% of RAM
+soft_memlock: 1887437
+hard_memlock: 1887437
+

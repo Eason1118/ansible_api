@@ -1,0 +1,31 @@
+---
+# tasks file for vmwaretools/Windows
+- name: Creating VMware Tools Package Directory for Windows
+  win_file:
+    path: C:\ProgramData\VmwareTools\
+    state: directory
+
+- name: Check vmware-tools directory exists
+  local_action: stat path={{ packages_dir }}/vmwaretools/windows
+  register: result
+  failed_when: not result.stat.exists
+
+- name: Uploading VMware Tools Package for Windows 64 bit
+  win_copy:
+    src: "{{ packages_dir }}/vmwaretools/windows/x64/VMware-tools-10.2.5-8068406-x86_64.exe"
+    dest: C:\ProgramData\VmwareTools\
+  when: '"64" in ansible_architecture'
+
+- name: Installing VMware Tools for Windows 64 bit
+  raw: C:\ProgramData\VmwareTools\VMware-tools-10.2.5-8068406-x86_64.exe /S /v /qn REBOOT=R
+  when: '"64" in ansible_architecture'
+
+- name: Uploading VMware Tools Package for Windows 32 bit
+  win_copy:
+    src: "{{ packages_dir }}/vmwaretools/windows/x86/VMware-tools-10.2.5-8068406-i386.exe"
+    dest: C:\ProgramData\VmwareTools\
+  when: '"32" in ansible_architecture'
+
+- name: Installing VMware Tools for Windows 32 bit
+  raw: C:\ProgramData\VmwareTools\VMware-tools-10.2.5-8068406-i386.exe /S /v /qn REBOOT=R
+  when: '"32" in ansible_architecture'

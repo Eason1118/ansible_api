@@ -1,0 +1,11 @@
+---
+# defaults file for ansible-oracle-wls
+oracle_weblogic_version: 12c
+oracle_weblogic_release: 12.2.1
+oracle_weblogic_quick_installation: yes
+
+oracle_weblogic_install_type: Complete with Examples # WebLogic Server, Coherence, Complete with Examples
+
+weblogic_jar_name: fmw_12.2.1.1.0_wls.jar
+
+oracle_weblogic_jar: /tmp/{{ weblogic_jar_name }}

@@ -1,0 +1,62 @@
+** General Options
+PROD                      = {{db2_prod}}
+FILE                      = {{db2_file}}
+LIC_AGREEMENT             = {{db2_lic_agreement}}
+INSTALL_TYPE              = {{db2_install_type}}
+
+
+** The following languages apply to all translated components. Enable the
+** language(s) you want installed. If you do not enable any language keywords,
+** then the English language (EN) will still be installed by default.
+** ---------------------------------------------------------------------------
+*LANG                     = BR              ** Portuguese - Brazil (pt_BR)
+*LANG                     = CN              ** Simplified Chinese (zh_CN)
+*LANG                     = CZ              ** Czech (cs_CZ)
+*LANG                     = DE              ** German (de_DE)
+*LANG                     = ES              ** Spanish (es_ES)
+*LANG                     = FR              ** French (fr_FR)
+*LANG                     = IT              ** Italian (it_IT)
+*LANG                     = JP              ** Japanese (ja_JP)
+*LANG                     = KR              ** Korean (ko_KR)
+*LANG                     = PL              ** Polish (pl_PL)
+*LANG                     = RU              ** Russian (ru_RU)
+*LANG                     = TW              ** Traditional Chinese (zh_TW)
+
+
+{%for inst in db2_instances %}
+
+{%if db2_create_instances == true %}
+** Instance Creation Settings
+** --------------------------
+INSTANCE                  = {{inst.instance}}
+{{inst.instance}}.NAME             = {{inst.name}} 
+{{inst.instance}}.GROUP_NAME              = {{inst.group_name}} 
+{{inst.instance}}.FENCED_USERNAME  = {{inst.fenced_username}}
+{{inst.instance}}.FENCED_GROUP_NAME = {{inst.fenced_group_name}}
+
+{%if inst.options is defined %}
+** Instance Optionals
+** ---------------------------
+{% for key, value in inst.options.items() %}
+{{inst.instance | upper}}.{{ key | upper}}             = {{ value }}
+{% endfor %}
+{% endif %}
+
+{% if inst.dbm_params is defined %}
+** Instance DBM CFG Settings
+** -------------------------
+{% for key, value in inst.dbm_params.items() %}
+{{inst.instance | upper}}.{{ key | upper}}             = {{ value }}
+{% endfor %}
+{% endif %}
+{% endif %}
+{% endfor %}
+
+{%if global_params is defined %}
+** Global Profile Registry Settings
+** --------------------------------
+{% for key, value in global_params.items() %}
+{{ key | upper}}             = {{ value }}
+{% endfor %}
+{% endif %}
+

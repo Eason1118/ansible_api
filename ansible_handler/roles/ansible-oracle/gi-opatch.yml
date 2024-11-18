@@ -1,0 +1,6 @@
+ - name: Apply patches to GI
+   hosts: "{{ hostgroup }}"
+   become: yes
+   serial: 1
+   roles:
+      - {role: oraswgi-manage-patches }

@@ -1,0 +1,6 @@
+---
+jdk_package: jdk-8u
+#java_major_version: 1.8.0_
+#java_minor_version: 162
+#java_major_version: 1.8.0_
+#packages_dir: /root/ansible/packages/oracle_java/8u191

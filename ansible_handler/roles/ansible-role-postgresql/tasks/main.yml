@@ -1,0 +1,53 @@
+---
+- include: variables.yml
+- include: get_postgresql.yml
+  tags: download
+
+#- name: Installing OL Public repository
+#  copy: src="{{yum_repo}}" dest='/etc/yum.repos.d/{{yum_repo}}'
+#  tags: download
+
+#- name: yum install lib
+#  #shell: rpm -ivh '{{ postgresql_download_path }}/{{ item }}'
+#  #with_items: '{{ postgresql_packages }}'
+#  yum:
+#    name: '{{ item }}'
+#    state: installed
+#    #enablerepo: "{{yum_repo}}"
+#  with_items: '{{ postgresql_lib_packages }}'
+- name: Copy packages files
+  copy: src=packages.tar dest='/tmp/'
+
+- name: Decompressing packages
+  unarchive:
+    src: '/tmp/packages.tar'
+    dest: "/tmp/"
+    copy: no
+    mode: 0777
+
+- name: RPM install BD2 pre requisites packages
+  shell: yum install -y /tmp/packages/*
+  ignore_errors: yes
+
+- name: rpm install
+  #shell: rpm -ivh '{{ postgresql_download_path }}/{{ item }}'
+  #with_items: '{{ postgresql_packages }}'
+
+  yum:
+    name: '{{ postgresql_download_path }}/{{ item }}'
+    state: installed
+  with_items: '{{ postgresql_packages }}'
+  ignore_errors: yes
+
+- include: initialize.yml
+- include: configure.yml
+
+- name: Ensure PostgreSQL is started and enabled on boot.
+  service:
+    name: "{{ postgresql_daemon }}"
+    state: "{{ postgresql_service_state }}"
+    enabled: "{{ postgresql_service_enabled }}"
+
+# Configure PostgreSQL.
+- include: databases.yml
+- include: users.yml

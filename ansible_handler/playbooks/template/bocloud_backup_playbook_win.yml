@@ -1,0 +1,30 @@
+---
+
+- hosts: {{ ip_list }}
+  gather_facts: true
+  tasks:
+    - set_fact: 
+        timestamp: {{ "\"{{ lookup('pipe', 'date +%Y%m%d%H%M%SZ') }}\"" }}
+
+    - name: zip src file or directory
+      win_zip:
+        dest: {{ '"{{ ansible_user_dir }}' }}/{{ args.src_base_name }}_{{ '{{ timestamp }}.zip"' }}
+        src: {{ args.src }}
+        force: True
+      register: zip_out
+
+    - set_fact:
+        library_path: {{ "'{{ zip_out.win_zip }}'" }}
+
+    - name: fetch remote zip file to dest
+      fetch:
+        dest: "{{ bocloud_worker.nfs_path }}/{{ args.dest }}/{{ '{{ inventory_hostname }}/"' }}
+        src: {{ "'{{ zip_out.win_zip.dest }}'" }}
+        flat: true
+      register: bocloud_backup_msg
+    
+    - name: remove remote temp zip file
+      win_file:
+        path: {{ "'{{ zip_out.win_zip.dest }}'" }}
+        state: absent
+      ignore_errors: true

@@ -1,0 +1,93 @@
+---
+- name: Include Configuration
+  include_vars: "{{ item }}"
+  with_first_found:
+    - "{{ ansible_os_family }}.yml"
+  when: not etcd_config_only|bool
+
+- name: Install system dependencies for synchronize
+  package: name={{ item }}
+  with_flattened: "{{ etcd_install_dependencies|default([]) }}"
+  when: not etcd_config_only|bool
+
+- name: create etcd group
+  become: yes
+  become_user: root
+  group:
+    name: '{{ etcd_group }}'
+    state: present
+
+- name: create etcd user
+  become: yes
+  become_user: root
+  user:
+    name: '{{ etcd_user }}'
+    group: '{{ etcd_group }}'
+    home: '{{ etcd_home }}'
+    create_home: yes
+    state: present
+
+- name: create /etc/etcd dir
+  file:
+    state: directory
+    path: '/etc/etcd'
+    mode: 0755
+
+- name: create etcd data dir
+  file:
+    state: directory
+    path: '{{ etcd_data_dir }}'
+    owner: '{{ etcd_user }}'
+    group: '{{ etcd_group }}'
+    recurse: true
+    mode: 0755
+
+- name: upload etcd
+  copy:
+    src: "{{ packages_dir }}/etcd/etcd-v{{ etcd_version }}-linux-amd64.tar.gz"
+    dest: "{{ etcd_download_dir }}/etcd-v{{ etcd_version }}-linux-amd64.tar.gz"
+  when: not etcd_config_only|bool
+
+- name: Unarchive etcd
+  unarchive: copy=no
+             src={{ etcd_download_dir }}/etcd-v{{ etcd_version }}-linux-amd64.tar.gz
+             dest={{ etcd_download_dir }}
+             creates="{{ etcd_download_dir }}/etcd-v{{ etcd_version }}-linux-amd64/etcd"
+  when: not etcd_config_only|bool
+
+- name: Copy binaries from archive into etcd dir
+  synchronize: src="{{ etcd_download_dir }}/etcd-v{{ etcd_version }}-linux-amd64/{{ item }}"
+               dest="{{ etcd_dir }}"
+               archive=True
+  delegate_to: "{{ inventory_hostname }}"
+  with_items:
+    - etcd
+    - etcdctl
+  when: not etcd_config_only|bool
+
+- name: Add etcd upstart service
+  template: src=etc/init/etcd.conf.j2
+            dest=/etc/init/etcd.conf
+            mode=0644
+  when: ansible_service_mgr == "upstart"
+  notify:
+    - Restart etcd
+
+- import_tasks: gen-etcd-certs.yml
+  when: etcd_secure
+
+- name: install etcd.service configuration
+  template:
+    src: 'etcd.conf.j2'
+    dest: '/etc/etcd/etcd.conf'
+    mode: 0644
+  when: not etcd_config_only|bool
+
+- name: Add etcd systemd service
+  template: src=etc/systemd/system/etcd.service.j2
+            dest=/etc/systemd/system/etcd.service
+            mode=0644
+  when: ansible_service_mgr == "systemd"
+  notify:
+    - Reload systemd
+    - Restart etcd

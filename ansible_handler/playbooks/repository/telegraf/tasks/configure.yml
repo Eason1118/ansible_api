@@ -1,0 +1,63 @@
+---
+- name: Set templatized Telegraf configuration
+  template:
+    src: ../repository/telegraf/templates/telegraf.conf.j2
+    dest: "{{ telegraf_configuration_dir }}/telegraf.conf"
+    force: yes
+    backup: yes
+    owner: telegraf
+    group: telegraf
+    mode: 0744
+  when: telegraf_template_configuration
+  # If config changes, restart telegraf and confirm it remained running
+  notify:
+    - "restart telegraf"
+    - "pause"
+    - "check status"
+    - "assert running"
+
+# If os version is 6.x, /etc/init.d/telegraf exists, modify this file.
+- name: Test for sysvinit script
+  stat:
+    path: /etc/init.d/telegraf
+  register: telegraf_sysvinit_script
+
+- name: Modify user Telegraf should run as [sysvinit]
+  command: sed -i s/USER=.*/USER={{ telegraf_runas_user }}/ /etc/init.d/telegraf
+  when: telegraf_runas_user != "telegraf" and telegraf_sysvinit_script.stat.exists
+  register: config_modified
+
+- name: Modify group Telegraf should run as [sysvinit]
+  command: sed -i s/GROUP=.*/GROUP={{ telegraf_runas_group }}/ /etc/init.d/telegraf
+  when: telegraf_runas_group != "telegraf" and telegraf_sysvinit_script.stat.exists
+  register: config_modified
+
+- name: Restart Telegraf If user or group modified [sysvinit]
+  service:
+    name: telegraf
+    state: restarted
+  when: not config_modified.skipped
+
+# If os version is 7.x, /etc/init.d/telegraf not exist, use override file.
+- name: Create systemd service directory [systemd]
+  file:
+    path: /etc/systemd/system/telegraf.service.d
+    state: directory
+  when: telegraf_runas_user != "telegraf" and not telegraf_sysvinit_script.stat.exists
+
+- name: Modify user Telegraf should run as [systemd]
+  template:
+    src: ../templates/systemd/system/telegraf.service.d/override.conf
+    dest: /etc/systemd/system/telegraf.service.d/override.conf
+  when: telegraf_runas_user != "telegraf" and not telegraf_sysvinit_script.stat.exists
+  register: telegraf_unit_file_updated
+
+- name: Reload systemd configuration [systemd]
+  command: systemctl daemon-reload
+  when: telegraf_unit_file_updated is defined and telegraf_unit_file_updated.changed
+  # After  daemon-reload, restart telegraf to take effect.
+  notify:
+    - "restart telegraf"
+    - "pause"
+    - "check status"
+    - "assert running"

@@ -1,0 +1,74 @@
+---
+  # Include variables at the start so they're in scope
+#  - name: Include OS-Specific variables
+#    include_vars: "{{ ansible_os_family }}.yml"
+
+  - include: packages-redhat.yml
+    when: ansible_os_family == "RedHat"
+
+  - include: packages-debian.yml
+    when: ansible_os_family == "Debian"
+    
+  - include: packages-redhat.yml
+    when: ansible_os_family == "CentOS"
+
+  - include: get_db2.yml
+    tags: download
+
+  - include: instance_users.yml
+    tags: ['users', 'setup']
+
+  - name: Disabling SELinux
+    selinux: state=disabled
+    tags: ['dont-on-docker', 'setup']
+    when: ansible_os_family == "RedHat"
+
+  - name: Disabling SELinux
+    selinux: state=disabled
+    tags: ['dont-on-docker', 'setup']
+    when: ansible_os_family == "CentOS"
+
+  - name: Adding entry to /etc/hosts
+    lineinfile:
+      dest: /etc/hosts
+      regexp: "^{{ ansible_default_ipv4.address }} {{ ansible_hostname }}$"
+      line: "{{ ansible_default_ipv4.address }} {{ ansible_hostname }}"
+    tags: ['dont-on-docker', 'setup']
+
+  - name: Running DB2 Pre Requisits Check
+    command: "{{db2_binary.dest}}/{{db2_creates}}/{{db2_unarchive}}/db2prereqcheck -i -s"
+    register: precheck
+    failed_when: "'failed' in precheck.stderr"
+    changed_when: False 
+    tags: setup
+    ignore_errors: yes
+
+  - name: Parse response file
+    template: src=db2server.j2.rsp dest=/tmp/db2server.rsp
+    tags: parse
+
+  - name: Installing DB2 10.5
+    command: "{{db2_binary.dest}}/{{db2_creates}}/{{db2_unarchive}}/db2setup -r /tmp/db2server.rsp"
+    register: db2_setup
+    args: 
+      creates: "{{db2_file}}"
+    tags: install
+
+  - name: Setup results
+    debug: var=db2_setup
+    tags: download
+
+  - name: Validating the current installation
+    command: "{{db2_file}}/bin/db2val -o"
+    register: db2_val
+    failed_when: "'DBI1335I' not in db2_val.stdout"
+    changed_when: False
+    tags: ['install', 'validate']
+
+  - name: Validate results
+    debug: var=db2_val
+    tags: download
+    
+  - include: create_databases.yml
+    when: databases is defined
+    tags: databases
